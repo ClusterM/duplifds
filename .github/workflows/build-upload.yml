@@ -74,5 +74,12 @@ jobs:
     steps:
     - name: Download artifacts
       uses: actions/download-artifact@v3
-    - name: test
-      run: tree .
+    - name: Generate index.html
+      run: "(echo \"<html><head><title>DupliFDS</title></head><body>Updated: `date`<br/><br/><a href='duplifds/duplifds.zip'>duplifds.zip</a></body></html>\") > index.html"
+    - name: Upload artifact
+      uses: actions/upload-pages-artifact@v1
+      with:
+        path: '.'
+    - name: Deploy to GitHub Pages
+      id: deployment
+      uses: actions/deploy-pages@v1
