@@ -120,9 +120,11 @@ IRQ_disk_read:
   ldy #0
   lda FDS_DATA_READ
   sta [READ_OFFSET], y
-  ; ack
-  lda #0
-  sta FDS_DATA_WRITE
+  ; ack (is it required?)
+  ldx #0
+  stx FDS_DATA_WRITE
+  ; parse
+  jsr parse_block
   ; increase address offset
   clc
   lda <READ_OFFSET
@@ -182,25 +184,16 @@ IRQ_disk_read_CRC:
   rti
 
 parse_block:
+  pha
   ; disk header block?
   lda <CURRENT_BLOCK
   bne .not_header
   ; store header in the permanent area
   sec
-  lda <READ_OFFSET
-  sbc #56
-  sta <COPY_SOURCE_ADDR
-  lda <READ_OFFSET + 1
-  sbc #0
-  sta <COPY_SOURCE_ADDR + 1
-  ldy #55
-.disk_header_loop
-  lda [COPY_SOURCE_ADDR], y
-  sta HEADER_CACHE, y
-  dey
-  bpl .disk_header_loop
-  rts
-  ldy <READ_OFFSET
+  lda #56
+  sbc <BYTES_LEFT
+  tay
+  pla  
   sta HEADER_CACHE, y
   rts
 .not_header:
@@ -208,34 +201,34 @@ parse_block:
   cmp #1
   bne .not_file_amount
   ; store file amount
-  sec
-  lda <READ_OFFSET
-  sbc #2
-  sta <COPY_SOURCE_ADDR
-  lda <READ_OFFSET + 1
-  sbc #0
-  sta <COPY_SOURCE_ADDR + 1
-  ldy #1
-  lda [COPY_SOURCE_ADDR], y
-  sta <FILE_AMOUNT  
+  lda <BYTES_LEFT
+  cmp #1
+  bne .keep_file_amount
+  pla
+  sta <FILE_AMOUNT
+  rts
+.keep_file_amount:
+  pla
   rts
 .not_file_amount:
   ; file header block?
   and #1
   bne .end
   ; read next file size
-  sec
-  lda <READ_OFFSET
-  sbc #16
-  sta <COPY_SOURCE_ADDR
-  lda <READ_OFFSET + 1
-  sbc #0
-  sta <COPY_SOURCE_ADDR + 1
-  ldy #$0D
-  lda [COPY_SOURCE_ADDR], y
+  lda <BYTES_LEFT
+  cmp #3
+  ; low byte
+  bne .not_low_size
+  pla
   sta <NEXT_FILE_SIZE
-  iny
-  lda [COPY_SOURCE_ADDR], y
+  rts
+.not_low_size:
+  cmp #2
+  bne .end
+  ; high byte
+  pla
   sta <NEXT_FILE_SIZE + 1
+  rts
 .end:
+  pla
   rts  
