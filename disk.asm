@@ -1,9 +1,9 @@
 read_disk:
   ; start address in memory
   lda #$00
-  sta READ_OFFSET
+  sta <READ_OFFSET
   lda #$60
-  sta READ_OFFSET + 1
+  sta <READ_OFFSET + 1
   ; reset
   lda #(FDS_CONTROL_READ | FDS_CONTROL_MOTOR_OFF)
   sta FDS_CONTROL
@@ -27,6 +27,8 @@ read_disk:
   print_line "NO POWER"
   jmp infin
 .battery_ok:
+  lda #0
+  sta <BLOCK_CURRENT
 .rewind:
   ; TODO: add timeout
   ; TODO: wait not ready
@@ -38,14 +40,12 @@ read_disk:
   lda FDS_DRIVE_STATUS
   and #FDS_DRIVE_STATUS_DISK_NOT_READY
   bne .not_ready
-  ; print_line "REWINDED"
+  ; ready! reading block by block
   ; start reading
+.next_block
   jsr read_block
-  jsr read_block
-  jsr read_block
-  jsr read_block
-  jsr read_block
-  jsr read_block
+  lda STOP_REASON
+  beq .next_block
   ; reset and stop motor
   lda #(FDS_CONTROL_READ | FDS_CONTROL_MOTOR_OFF)
   sta FDS_CONTROL
@@ -60,37 +60,8 @@ read_block:
 .not_first_block:
   delay 9
 .end_delay
-  ; calculate block size
-  lda #0
-  sta <BYTES_LEFT + 1
-  lda <BLOCK_CURRENT
-  ; first block (disk header)?
-  bne .file_amount_block
-  lda #56
-  sta <BYTES_LEFT
-  jmp .end_block_size
-.file_amount_block:
-  cmp #1
-  bne .file_header_block
-  lda #2
-  sta <BYTES_LEFT
-  jmp .end_block_size
-.file_header_block:
-  and #1
-  bne .file_data_block
-  lda #16
-  sta <BYTES_LEFT
-  jmp .end_block_size
-.file_data_block:
-  clc
-  lda <NEXT_FILE_SIZE
-  adc #1
-  sta <BYTES_LEFT
-  lda <NEXT_FILE_SIZE + 1
-  adc #0
-  sta <BYTES_LEFT + 1
-.end_block_size:
-  ; TODO: check free memory
+  jsr calculate_block_size
+  ; check free memory
   sec
   lda #$00
   sbc <READ_OFFSET
@@ -105,14 +76,15 @@ read_block:
   lda <TEMP + 1
   sbc <BYTES_LEFT + 1
   bcs .memory_ok
-  print_line "OUT OF MEMORY"
-  ; TODO: this is not critical error
-  jmp infin
+  ;print_line "OUT OF MEMORY"
+  lda #2
+  sta <STOP_REASON
+  rts
 .memory_ok
   ; reset variables
   lda #0
-  sta CRC_STATE
-  sta CRC_RESULT
+  sta <CRC_STATE
+  sta <CRC_RESULT
   ; set IRQ vector
   set_IRQ IRQ_disk_read
   ; start reading
@@ -121,13 +93,15 @@ read_block:
   ; wait for data
 .wait_data
   ; TODO: timeout
-  lda CRC_RESULT
+  lda <CRC_RESULT
   beq .wait_data
   cmp #1
   beq .CRC_ok
   ; bad CRC
-  print_line "BAD CRC"
-  jmp infin
+  ;print_line "BAD CRC"
+  lda #1
+  sta <STOP_REASON
+  rts
 .CRC_ok:
   ; end of read  
   inc <BLOCK_CURRENT
@@ -137,6 +111,48 @@ read_block:
   bcc .no_new_blocks
   sta <BLOCKS_READ
 .no_new_blocks:
+  lda #0
+  sta <STOP_REASON
+  rts
+
+calculate_block_size:
+  ; calculate block size
+  lda #0
+  sta <BYTES_LEFT + 1
+  lda <BLOCK_CURRENT
+  ; first block (disk header)?
+  bne .file_amount_block
+  lda #56
+  sta <BYTES_LEFT
+  lda #1
+  sta <BLOCK_TYPE
+  rts
+.file_amount_block:
+  cmp #1
+  bne .file_header_block
+  lda #2
+  sta <BYTES_LEFT
+  lda #2
+  sta <BLOCK_TYPE
+  rts
+.file_header_block:
+  and #1
+  bne .file_data_block
+  lda #16
+  sta <BYTES_LEFT
+  lda #3
+  sta <BLOCK_TYPE
+  rts
+.file_data_block:
+  clc
+  lda <NEXT_FILE_SIZE
+  adc #1
+  sta <BYTES_LEFT
+  lda <NEXT_FILE_SIZE + 1
+  adc #0
+  sta <BYTES_LEFT + 1
+  lda #4
+  sta <BLOCK_TYPE
   rts
 
 IRQ_disk_read:
@@ -147,6 +163,19 @@ IRQ_disk_read:
   ; ack (is it required?)
   ldx #0
   stx FDS_DATA_WRITE
+  ldx <BLOCK_TYPE
+  beq .type_check_end
+  cmp <BLOCK_TYPE
+  beq .type_check_end
+  ; invalid block
+  lda #(FDS_CONTROL_READ | FDS_CONTROL_MOTOR_ON)
+  sta FDS_CONTROL
+  dec <CRC_RESULT
+  rti
+.type_check_end:
+  ; do not check again, first byte only
+  ldx #0
+  stx <BLOCK_TYPE
   ; parse
   jsr parse_block
   ; increase address offset
