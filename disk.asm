@@ -131,6 +131,7 @@ read_block:
 .CRC_ok:
   ; end of read  
   inc <BLOCK_CURRENT
+  ; update BLOCKS_READ if it's lower than BLOCK_CURRENT
   lda <BLOCK_CURRENT
   cmp <BLOCKS_READ
   bcc .no_new_blocks
@@ -215,9 +216,9 @@ parse_block:
   sec
   lda #56
   sbc <BYTES_LEFT
-  tay
+  tax
   pla  
-  sta HEADER_CACHE, y
+  sta <HEADER_CACHE, x
   rts
 .not_header:
   ; file amount block?
