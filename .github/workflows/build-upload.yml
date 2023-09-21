@@ -60,3 +60,13 @@ jobs:
         make TILER=./nestiler/nestiler FDSPACKER=./fdspacker/fdspacker NESASM=./nesasm-source/nesasm OUTPUT_IMAGE=./duplifds/duplifds.fds
         cp LICENSE duplifds
         cp README.md duplifds
+    - name: Archive
+      working-directory: duplifds
+      run: |
+        sudo apt-get install zip
+        zip -r9 duplifds.zip duplifds
+    - name: Upload artifact
+      uses: actions/upload-artifact@v3
+      with:
+        name: duplifds
+        path: duplifds.zip
