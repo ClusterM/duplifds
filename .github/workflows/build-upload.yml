@@ -60,7 +60,7 @@ jobs:
     - name: Build DupliFDS
       run: |
         mkdir -p duplifds
-        make TILER=./${{ env.NESTILER_OUT }}/nestiler FDSPACKER=./${{ env.FDSPACKER_OUT }}/fdspacker NESASM=./{{ env.NESASM_OUT }}/nesasm OUTPUT_IMAGE=./duplifds/duplifds.fds
+        make TILER=./${{ env.NESTILER_OUT }}/nestiler FDSPACKER=./${{ env.FDSPACKER_OUT }}/fdspacker NESASM=./${{ env.NESASM_OUT }}/nesasm OUTPUT_IMAGE=./duplifds/duplifds.fds
         rm duplifds/*.nl
         cp LICENSE duplifds
         cp README.md duplifds
