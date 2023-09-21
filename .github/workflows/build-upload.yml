@@ -35,7 +35,7 @@ jobs:
         LATEST_TAG=$(git describe --tags `git rev-list --tags --max-count=1`)
         git checkout $LATEST_TAG        
     - name: Build NesTiler
-      run: dotnet publish ${{ env.NESTILER_DIR }} -c Release --no-self-contained -p:PublishSingleFile=false -o .
+      run: dotnet publish ${{ env.NESTILER_DIR }} -c Release --no-self-contained -p:PublishSingleFile=false -p:PublishReadyToRun=false -o .
     - name: Checkout FDSPacker
       run: |
         git clone ${{ env.FDSPACKER_REPO }} -c ${{ env.FDSPACKER_DIR }}
@@ -43,6 +43,6 @@ jobs:
         LATEST_TAG=$(git describe --tags `git rev-list --tags --max-count=1`)
         git checkout $LATEST_TAG        
     - name: Build FDSPacker
-      run: dotnet publish ${{ env.FDSPACKER_DIR }} -c Release --no-self-contained -p:PublishSingleFile=false -o .
+      run: dotnet publish ${{ env.FDSPACKER_DIR }} -c Release --no-self-contained -p:PublishSingleFile=false -p:PublishReadyToRun=false -o .
     - name: Build DupliFDS
       run: make
