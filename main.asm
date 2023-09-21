@@ -111,7 +111,11 @@ main:
   print_line "READING"
   
   lda #0
-  sta CURRENT_BLOCK
+  sta BLOCK_CURRENT
+  sta BLOCKS_READ
+  sta BLOCKS_WRITTEN
+  sta FILE_AMOUNT
+  sta BLOCK_AMOUNT
   jsr read_disk
 
   print_line "DONE!"

@@ -52,7 +52,7 @@ read_disk:
   rts
 
 read_block:
-  lda CURRENT_BLOCK
+  lda BLOCK_CURRENT
   ; delay before block
   bne .not_first_block
   delay 487
@@ -63,7 +63,7 @@ read_block:
   ; calculate block size
   lda #0
   sta <BYTES_LEFT + 1
-  lda <CURRENT_BLOCK
+  lda <BLOCK_CURRENT
   ; first block (disk header)?
   bne .file_amount_block
   lda #56
@@ -91,6 +91,24 @@ read_block:
   sta <BYTES_LEFT + 1
 .end_block_size:
   ; TODO: check free memory
+  sec
+  lda #$00
+  sbc <READ_OFFSET
+  sta <TEMP
+  lda #$C0
+  lda <READ_OFFSET + 1
+  sta <TEMP + 1
+  ; now TEMP = memory left
+  sec
+  lda <TEMP
+  sbc <BYTES_LEFT
+  lda <TEMP + 1
+  sbc <BYTES_LEFT + 1
+  bcs .memory_ok
+  print_line "OUT OF MEMORY"
+  ; TODO: this is not critical error
+  jmp infin
+.memory_ok
   ; reset variables
   lda #0
   sta CRC_STATE
@@ -112,7 +130,12 @@ read_block:
   jmp infin
 .CRC_ok:
   ; end of read  
-  inc CURRENT_BLOCK
+  inc <BLOCK_CURRENT
+  lda <BLOCK_CURRENT
+  cmp <BLOCKS_READ
+  bcc .no_new_blocks
+  sta <BLOCKS_READ
+.no_new_blocks:
   rts
 
 IRQ_disk_read:
@@ -186,7 +209,7 @@ IRQ_disk_read_CRC:
 parse_block:
   pha
   ; disk header block?
-  lda <CURRENT_BLOCK
+  lda <BLOCK_CURRENT
   bne .not_header
   ; store header in the permanent area
   sec
@@ -206,6 +229,10 @@ parse_block:
   bne .keep_file_amount
   pla
   sta <FILE_AMOUNT
+  clc
+  adc <FILE_AMOUNT
+  adc #2
+  sta <BLOCK_AMOUNT
   rts
 .keep_file_amount:
   pla
