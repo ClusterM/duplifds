@@ -4,10 +4,11 @@ TILER?=nestiler
 FDSPACKER?=fdspacker
 FAMICOM_DUMPER?=famicom-dumper
 
+OUTPUT_IMAGE?=duplifds.fds
+
 SOURCE=main.asm
 SOURCE_MORE=vars.asm fds_regs.asm macroses.asm disk.asm
 EXECUTABLE=duplifds.prg
-OUTPUT_IMAGE=duplifds.fds
 
 ASCII_IMAGE=ascii.png
 
