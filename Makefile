@@ -1,13 +1,14 @@
-NESASM=nesasm
-EMU=fceux64
-TILER=nestiler
-FDSPACKER=fdspacker
+NESASM?=nesasm
+EMU?=fceux64
+TILER?=nestiler
+FDSPACKER?=fdspacker
+FAMICOM_DUMPER?=famicom-dumper
+
 SOURCE=main.asm
 SOURCE_MORE=vars.asm fds_regs.asm macroses.asm disk.asm
 EXECUTABLE=duplifds.prg
 OUTPUT_IMAGE=duplifds.fds
 
-BG_IMAGE=bg.png
 ASCII_IMAGE=ascii.png
 
 PALETTE0=palette0.bin
@@ -28,7 +29,7 @@ run: $(OUTPUT_IMAGE)
 	$(EMU) $(OUTPUT_IMAGE)
 
 write:
-	famicom-dumper write-fds --verify --file $(OUTPUT_IMAGE)
+	$(FAMICOM_DUMPER) write-fds --verify --file $(OUTPUT_IMAGE)
 
 $(ASCII_PATTERN) $(PALETTE0): $(ASCII_IMAGE)
 	$(TILER) -i0 $(ASCII_IMAGE) --enable-palettes 0 \
