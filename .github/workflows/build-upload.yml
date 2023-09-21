@@ -1,0 +1,46 @@
+name: Build, test, upload
+
+on:
+  push:
+    branches: [ master ]
+  pull_request:
+    branches: [ master ]
+  workflow_dispatch:
+
+# Sets permissions of the GITHUB_TOKEN to allow deployment to GitHub Pages
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    env:
+      NESTILER_REPO: https://github.com/ClusterM/nestiler
+      NESTILER_DIR: nestiler
+      FDSPACKER_REPO: https://github.com/ClusterM/fdspacker
+      FDSPACKER_DIR: fdspacker
+    steps:
+    - name: Checkout DupliFDS
+      uses: actions/checkout@v3
+    - name: Setup .NET
+      uses: actions/setup-dotnet@v2
+      with:
+        dotnet-version: 6.0.x      
+    - name: Checkout NesTiler
+      run: |
+        git clone ${{ env.NESTILER_REPO }} ${{ env.NESTILER_DIR }}
+        LATEST_TAG=$(git -C ${{ env.NESTILER_DIR }} describe --tags `git -C ${{ env.NESTILER_DIR }} rev-list --tags --max-count=1`)
+        git checkout -C ${{ env.NESTILER_DIR }} $LATEST_TAG        
+    - name: Build NesTiler
+      run: dotnet publish ${{ env.NESTILER_DIR }} -c Release --no-self-contained -o .
+    - name: Checkout FDSPacker
+      run: |
+        git clone ${{ env.FDSPACKER_REPO }} -c ${{ env.FDSPACKER_DIR }}
+        LATEST_TAG=$(git -C ${{ env.FDSPACKER_DIR }} describe --tags `git -C ${{ env.FDSPACKER_DIR }} rev-list --tags --max-count=1`)
+        git checkout -C ${{ env.FDSPACKER_DIR }} $LATEST_TAG        
+    - name: Build FDSPacker
+      run: dotnet publish ${{ env.FDSPACKER_DIR }} -c Release --no-self-contained -o .
+    - name: Build DupliFDS
+      run: make
