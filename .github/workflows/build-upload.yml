@@ -37,7 +37,7 @@ jobs:
         LATEST_TAG=$(git describe --tags `git rev-list --tags --max-count=1`)
         git checkout $LATEST_TAG        
     - name: Build NesTiler
-      run: dotnet publish ${{ env.NESTILER_DIR }} -c Release --no-self-contained -r linux-x64 -o .
+      run: dotnet publish ${{ env.NESTILER_DIR }}/NesTiler -c Release --no-self-contained -r linux-x64 -o .
     - name: Checkout FDSPacker
       run: |
         git clone ${{ env.FDSPACKER_REPO }} -c ${{ env.FDSPACKER_DIR }}
@@ -45,7 +45,7 @@ jobs:
         LATEST_TAG=$(git describe --tags `git rev-list --tags --max-count=1`)
         git checkout $LATEST_TAG        
     - name: Build FDSPacker
-      run: dotnet publish ${{ env.FDSPACKER_DIR }} -c Release --no-self-contained -r linux-x64 -o .
+      run: dotnet publish ${{ env.FDSPACKER_DIR }}/FDSPacker -c Release --no-self-contained -r linux-x64 -o .
     - name: Checkout nesasm CE
       run: |
         git clone ${{ env.NESASM_REPO }} -c ${{ env.NESASM_DIR }}
