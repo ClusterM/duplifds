@@ -48,7 +48,7 @@ jobs:
       run: dotnet publish ${{ env.FDSPACKER_DIR }}/FDSPacker -c Release --no-self-contained -r linux-x64 -o .
     - name: Checkout nesasm CE
       run: |
-        git clone ${{ env.NESASM_REPO }} -c ${{ env.NESASM_DIR }}
+        git clone ${{ env.NESASM_REPO }} ${{ env.NESASM_DIR }}
         cd ${{ env.NESASM_DIR }}
         LATEST_TAG=$(git describe --tags `git rev-list --tags --max-count=1`)
         git checkout $LATEST_TAG        
