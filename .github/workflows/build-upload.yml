@@ -66,4 +66,12 @@ jobs:
       uses: actions/upload-artifact@v3
       with:
         name: duplifds
-        path: duplifds.zip
+        path: duplifds
+  upload-to-pages:
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
+    - name: Download artifacts
+      uses: actions/download-artifact@v3
+    - name: test
+      run: du -h
