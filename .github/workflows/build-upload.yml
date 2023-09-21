@@ -19,10 +19,13 @@ jobs:
     env:
       NESTILER_REPO: https://github.com/ClusterM/nestiler
       NESTILER_DIR: nestiler-source
+      NESTILER_OUT: nestiler
       FDSPACKER_REPO: https://github.com/ClusterM/fdspacker
       FDSPACKER_DIR: fdspacker-source
+      FDSPACKER_OUT: fdspacker
       NESASM_REPO: https://github.com/ClusterM/nesasm
       NESASM_DIR: nesasm-source
+      NESASM_OUT: nesasm-source
     steps:
     - name: Checkout DupliFDS
       uses: actions/checkout@v3
@@ -37,7 +40,7 @@ jobs:
         LATEST_TAG=$(git describe --tags `git rev-list --tags --max-count=1`)
         git checkout $LATEST_TAG        
     - name: Build NesTiler
-      run: dotnet publish ${{ env.NESTILER_DIR }}/NesTiler -c Release --no-self-contained -r linux-x64 -o ./nestiler
+      run: dotnet publish ${{ env.NESTILER_DIR }}/NesTiler -c Release --no-self-contained -r linux-x64 -o ${{ env.NESTILER_OUT }}
     - name: Checkout FDSPacker
       run: |
         git clone ${{ env.FDSPACKER_REPO }} ${{ env.FDSPACKER_DIR }}
@@ -45,7 +48,7 @@ jobs:
         LATEST_TAG=$(git describe --tags `git rev-list --tags --max-count=1`)
         git checkout $LATEST_TAG        
     - name: Build FDSPacker
-      run: dotnet publish ${{ env.FDSPACKER_DIR }}/FDSPacker -c Release --no-self-contained -r linux-x64 -o ./fdspacker
+      run: dotnet publish ${{ env.FDSPACKER_DIR }}/FDSPacker -c Release --no-self-contained -r linux-x64 -o -o ${{ env.FDSPACKER_OUT }}
     - name: Checkout nesasm CE
       run: |
         git clone ${{ env.NESASM_REPO }} ${{ env.NESASM_DIR }}
@@ -57,7 +60,7 @@ jobs:
     - name: Build DupliFDS
       run: |
         mkdir -p duplifds
-        make TILER=./nestiler/nestiler FDSPACKER=./fdspacker/fdspacker NESASM=./nesasm-source/nesasm OUTPUT_IMAGE=./duplifds/duplifds.fds
+        make TILER=./${{ env.NESTILER_OUT }}/nestiler FDSPACKER=./${{ env.FDSPACKER_OUT }}/fdspacker NESASM=./{{ env.NESASM_OUT }}/nesasm OUTPUT_IMAGE=./duplifds/duplifds.fds
         rm duplifds/*.nl
         cp LICENSE duplifds
         cp README.md duplifds
