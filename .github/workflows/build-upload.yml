@@ -18,11 +18,11 @@ jobs:
     runs-on: ubuntu-latest
     env:
       NESTILER_REPO: https://github.com/ClusterM/nestiler
-      NESTILER_DIR: nestiler
+      NESTILER_DIR: nestiler-source
       FDSPACKER_REPO: https://github.com/ClusterM/fdspacker
-      FDSPACKER_DIR: fdspacker
+      FDSPACKER_DIR: fdspacker-source
       NESASM_REPO: https://github.com/ClusterM/nesasm
-      NESASM_DIR: nesasm
+      NESASM_DIR: nesasm-source
     steps:
     - name: Checkout DupliFDS
       uses: actions/checkout@v3
