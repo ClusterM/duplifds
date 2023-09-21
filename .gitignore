@@ -1,0 +1,11 @@
+duplifds.prg
+*.fds
+*.lst
+*.deb
+*.psd
+*.code-workspace
+*.nl
+*.bin
+side*
+.git
+.vscode

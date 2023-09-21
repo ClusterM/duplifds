@@ -114,7 +114,7 @@ main:
   sta CURRENT_BLOCK
   jsr read_disk
 
-  print_line "DONE"
+  print_line "DONE!"
 
   ; main loop        
 infin:
