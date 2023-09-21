@@ -48,7 +48,7 @@ jobs:
         LATEST_TAG=$(git describe --tags `git rev-list --tags --max-count=1`)
         git checkout $LATEST_TAG        
     - name: Build FDSPacker
-      run: dotnet publish ${{ env.FDSPACKER_DIR }}/FDSPacker -c Release --no-self-contained -r linux-x64 -o -o ${{ env.FDSPACKER_OUT }}
+      run: dotnet publish ${{ env.FDSPACKER_DIR }}/FDSPacker -c Release --no-self-contained -r linux-x64 -o ${{ env.FDSPACKER_OUT }}
     - name: Checkout nesasm CE
       run: |
         git clone ${{ env.NESASM_REPO }} ${{ env.NESASM_DIR }}
