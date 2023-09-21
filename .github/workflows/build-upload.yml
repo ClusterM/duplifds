@@ -40,7 +40,7 @@ jobs:
       run: dotnet publish ${{ env.NESTILER_DIR }}/NesTiler -c Release --no-self-contained -r linux-x64 -o .
     - name: Checkout FDSPacker
       run: |
-        git clone ${{ env.FDSPACKER_REPO }} -c ${{ env.FDSPACKER_DIR }}
+        git clone ${{ env.FDSPACKER_REPO }} ${{ env.FDSPACKER_DIR }}
         cd ${{ env.FDSPACKER_DIR }}
         LATEST_TAG=$(git describe --tags `git rev-list --tags --max-count=1`)
         git checkout $LATEST_TAG        
