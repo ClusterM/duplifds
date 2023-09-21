@@ -37,7 +37,7 @@ jobs:
         LATEST_TAG=$(git describe --tags `git rev-list --tags --max-count=1`)
         git checkout $LATEST_TAG        
     - name: Build NesTiler
-      run: dotnet publish ${{ env.NESTILER_DIR }}/NesTiler -c Release --no-self-contained -r linux-x64 -o .
+      run: dotnet publish ${{ env.NESTILER_DIR }}/NesTiler -c Release --no-self-contained -r linux-x64 -o ./nestiler
     - name: Checkout FDSPacker
       run: |
         git clone ${{ env.FDSPACKER_REPO }} ${{ env.FDSPACKER_DIR }}
@@ -45,7 +45,7 @@ jobs:
         LATEST_TAG=$(git describe --tags `git rev-list --tags --max-count=1`)
         git checkout $LATEST_TAG        
     - name: Build FDSPacker
-      run: dotnet publish ${{ env.FDSPACKER_DIR }}/FDSPacker -c Release --no-self-contained -r linux-x64 -o .
+      run: dotnet publish ${{ env.FDSPACKER_DIR }}/FDSPacker -c Release --no-self-contained -r linux-x64 -o ./fdspacker
     - name: Checkout nesasm CE
       run: |
         git clone ${{ env.NESASM_REPO }} ${{ env.NESASM_DIR }}
@@ -53,10 +53,10 @@ jobs:
         LATEST_TAG=$(git describe --tags `git rev-list --tags --max-count=1`)
         git checkout $LATEST_TAG        
     - name: Build nesasm CE
-      run: make -C ${{ env.NESASM_DIR }}/source EXEDIR=../..      
+      run: make -C ${{ env.NESASM_DIR }}/source EXEDIR=..
     - name: Build DupliFDS
       run: |
-        mkdir -p fdspacker
-        make TILER=./nestiler FDSPACKER=./fdspacker NESASM=./nesasm OUTPUT_IMAGE=fdspacker/fdspacker.fds
-        cp LICENSE fdspacker
-        cp README.md fdspacker
+        mkdir -p duplifds
+        make TILER=./nestiler/nestiler FDSPACKER=./fdspacker/fdspacker NESASM=./nesasm-source/nesasm OUTPUT_IMAGE=./duplifds/duplifds.fds
+        cp LICENSE duplifds
+        cp README.md duplifds
