@@ -58,6 +58,7 @@ jobs:
       run: |
         mkdir -p duplifds
         make TILER=./nestiler/nestiler FDSPACKER=./fdspacker/fdspacker NESASM=./nesasm-source/nesasm OUTPUT_IMAGE=./duplifds/duplifds.fds
+        rm duplifds/*.nl
         cp LICENSE duplifds
         cp README.md duplifds
     - name: Archive
@@ -66,7 +67,7 @@ jobs:
       uses: actions/upload-artifact@v3
       with:
         name: duplifds
-        path: duplifds
+        path: duplifds.zip
   upload-to-pages:
     needs: build
     runs-on: ubuntu-latest
@@ -74,4 +75,4 @@ jobs:
     - name: Download artifacts
       uses: actions/download-artifact@v3
     - name: test
-      run: du -h
+      run: tree .
