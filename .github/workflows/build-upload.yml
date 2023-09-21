@@ -1,4 +1,4 @@
-name: Build, test, upload
+name: Build and upload
 
 on:
   push:
@@ -55,4 +55,8 @@ jobs:
     - name: Build nesasm CE
       run: make -C ${{ env.NESASM_DIR }}/source EXEDIR=../..      
     - name: Build DupliFDS
-      run: make
+      run: |
+        mkdir -p fdspacker
+        make TILER=./nestiler FDSPACKER=./fdspacker NESASM=./nesasm OUTPUT_IMAGE=fdspacker/fdspacker.fds
+        cp LICENSE fdspacker
+        cp README.md fdspacker
