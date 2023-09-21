@@ -61,10 +61,7 @@ jobs:
         cp LICENSE duplifds
         cp README.md duplifds
     - name: Archive
-      working-directory: duplifds
-      run: |
-        sudo apt-get install zip
-        zip -r9 duplifds.zip duplifds
+      run: zip -r9 duplifds.zip duplifds
     - name: Upload artifact
       uses: actions/upload-artifact@v3
       with:
