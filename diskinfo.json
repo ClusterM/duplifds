@@ -1,0 +1,57 @@
+{
+  "sides": [
+    {
+      "licensee_code": "$00",
+      "game_name": "DUP",
+      "game_type": "$00",
+      "game_version": "0",
+      "disk_side": "A",
+      "disk_number": "0",
+      "disk_type": "FMS",
+      "boot_file": "15",
+      "manufacturing_date": "2022-09-21",
+      "country_code": "$00",
+      "rewritten_date": null,
+      "disk_writer_serial_number": "$FFFF",
+      "disk_rewrite_count": "0",
+      "actual_disk_side": "A",
+      "disk_type_other": "YellowDisk",
+      "disk_version": "$00",
+      "file_amount": 4,
+      "files": [
+        {
+          "file_number": "0",
+          "file_indicate_code": "0",
+          "file_name": "PRG",
+          "file_address": "$C000",
+          "file_kind": "Program",
+          "data": "duplifds.prg"
+        },
+        {
+          "file_number": "1",
+          "file_indicate_code": "0",
+          "file_name": "CHR",
+          "file_address": "$0200",
+          "file_kind": "Character",
+          "data": "ascii_pattern_table.bin"
+        },
+        {
+          "file_number": "2",
+          "file_indicate_code": "0",
+          "file_name": "NOLICENS",
+          "file_address": "$2000",
+          "file_kind": "Program",
+          "data": "no_license.prg"
+        },
+        {
+          "file_number": "3",
+          "file_indicate_code": "0",
+          "file_name": "DUMMYDAT",
+          "file_address": "$0200",
+          "file_kind": "Program",
+          "data": "dummy.prg"
+        }
+      ]
+    }
+  ]
+}
