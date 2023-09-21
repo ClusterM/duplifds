@@ -31,15 +31,17 @@ jobs:
     - name: Checkout NesTiler
       run: |
         git clone ${{ env.NESTILER_REPO }} ${{ env.NESTILER_DIR }}
-        LATEST_TAG=$(git -C ${{ env.NESTILER_DIR }} describe --tags `git -C ${{ env.NESTILER_DIR }} rev-list --tags --max-count=1`)
-        git checkout -C ${{ env.NESTILER_DIR }} $LATEST_TAG        
+        cd ${{ env.NESTILER_DIR }}
+        LATEST_TAG=$(git describe --tags `git rev-list --tags --max-count=1`)
+        git checkout $LATEST_TAG        
     - name: Build NesTiler
       run: dotnet publish ${{ env.NESTILER_DIR }} -c Release --no-self-contained -o .
     - name: Checkout FDSPacker
       run: |
         git clone ${{ env.FDSPACKER_REPO }} -c ${{ env.FDSPACKER_DIR }}
-        LATEST_TAG=$(git -C ${{ env.FDSPACKER_DIR }} describe --tags `git -C ${{ env.FDSPACKER_DIR }} rev-list --tags --max-count=1`)
-        git checkout -C ${{ env.FDSPACKER_DIR }} $LATEST_TAG        
+        cd ${{ env.FDSPACKER_DIR }}
+        LATEST_TAG=$(git describe --tags `git rev-list --tags --max-count=1`)
+        git checkout $LATEST_TAG        
     - name: Build FDSPacker
       run: dotnet publish ${{ env.FDSPACKER_DIR }} -c Release --no-self-contained -o .
     - name: Build DupliFDS
