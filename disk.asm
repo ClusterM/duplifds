@@ -65,8 +65,7 @@ transfer:
   lda <BLOCK_CURRENT
   cmp <BLOCKS_WRITTEN
   bcc .dumb_reading
-  ; write new block
-  ; TODO
+  jsr write_block
   jmp .block_end
 .dumb_reading:
   ; block already written, reading without storing
@@ -267,7 +266,7 @@ write_block:
   sta FDS_DATA_WRITE
   ; reset writing state
   lda #0
-  sta WRITING_STATE
+  sta <WRITING_STATE
   ; set IRQ vector
   set_IRQ IRQ_disk_write
   ; start transfer, enable IRQ
@@ -287,7 +286,7 @@ write_block:
 .wait_ready:
   ; do we really need to wait?
   lda FDS_DRIVE_STATUS
-  and FDS_DRIVE_STATUS_DISK_NOT_READY
+  and #FDS_DRIVE_STATUS_DISK_NOT_READY
   bne .wait_ready
   ; motor on without transfer
   lda #(FDS_CONTROL_READ | FDS_CONTROL_MOTOR_ON)
@@ -303,6 +302,7 @@ write_block:
 
 IRQ_disk_write:
   pha
+  ;lda FDS_DISK_STATUS
   ; discard input byte
   lda FDS_DATA_READ
   ; start bit written?
@@ -349,7 +349,7 @@ IRQ_disk_write:
   cmp #2
   bne .end
   ; enable CRC control
-  lda #(FDS_CONTROL_WRITE | FDS_CONTROL_MOTOR_ON | FDS_CONTROL_TRANSFER_ON | FDS_CONTROL_IRQ_ON | FDS_CONTROL_CRC)
+  lda #(FDS_CONTROL_WRITE | FDS_CONTROL_MOTOR_ON | FDS_CONTROL_TRANSFER_ON | FDS_CONTROL_CRC)
   sta FDS_CONTROL
   inc WRITING_STATE ; 3
 .end:
@@ -396,7 +396,6 @@ calculate_block_size:
   sta <BLOCK_TYPE
   rts
 
-
 parse_block:
   pha
   ; disk header block?
@@ -415,7 +414,7 @@ parse_block:
   rts
 .compare_header:
   pla
-  sta <HEADER_CACHE, x  
+  cmp <HEADER_CACHE, x  
   bne .wrong_header  
   rts
 .wrong_header:

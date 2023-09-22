@@ -106,6 +106,11 @@ main:
   lda #OPERATION_READING
   sta OPERATION
   jsr transfer
+  jsr ask_target_disk
+  lda #OPERATION_WRITING
+  sta OPERATION
+  jsr transfer
+  
   print_line "DONE!"
 
   ; main loop        
@@ -191,13 +196,13 @@ delay_sub:
 IRQ_delay:
   bit FDS_DISK_STATUS
   lda <TIMER_COUNTER
-  bne .start
+  bne .decr
   lda <TIMER_COUNTER + 1
-  bne .start
+  bne .decr
   lda #%00000000
   sta FDS_TIMER_CONTROL
   rti
-.start:
+.decr:
   lda <TIMER_COUNTER  
   sec
   sbc #1
