@@ -99,17 +99,13 @@ main:
 .wait_eject
   lda FDS_DRIVE_STATUS
   and #%00000001
-  beq .wait_eject
-  
-  print_line "INSERT DISK"
-  
+  beq .wait_eject  
+  print_line "INSERT SOURCE DISK"  
 .wait_insert
   lda FDS_DRIVE_STATUS
   and #%00000001
   bne .wait_insert
-
-  print_line "READING"
-  
+  print_line "READING"  
   lda #0
   sta BLOCK_CURRENT
   sta BLOCKS_READ
@@ -117,7 +113,6 @@ main:
   sta FILE_AMOUNT
   sta BLOCK_AMOUNT
   jsr read_disk
-
   print_line "DONE!"
 
   ; main loop        

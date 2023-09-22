@@ -1,8 +1,10 @@
 read_disk:
+  lda #STOP_SUCCESS
+  sta <STOP_REASON
   ; start address in memory
-  lda #$00
+  lda #(MEMORY_START & $FF)
   sta <READ_OFFSET
-  lda #$60
+  lda #((MEMORY_START >> 8) & $FF)
   sta <READ_OFFSET + 1
   ; reset
   lda #(FDS_CONTROL_READ | FDS_CONTROL_MOTOR_OFF)
@@ -11,8 +13,10 @@ read_disk:
   lda FDS_DRIVE_STATUS
   and #FDS_DRIVE_STATUS_DISK_NOT_INSERTED
   beq .disk_inserted
-  print_line "DISK NOT INSERTED"
-  jmp infin
+  ;print_line "DISK NOT INSERTED"
+  lda #STOP_NO_DISK
+  sta <STOP_REASON
+  rts
 .disk_inserted:
   ; start motor
   lda #(FDS_CONTROL_READ | FDS_CONTROL_MOTOR_ON)
@@ -24,17 +28,13 @@ read_disk:
   lda FDS_EXT_READ
   and #$80
   bne .battery_ok
-  print_line "NO POWER"
-  jmp infin
+  ;print_line "NO POWER"
+  lda #STOP_NO_POWER
+  sta <STOP_REASON
+  rts
 .battery_ok:
   lda #0
   sta <BLOCK_CURRENT
-.rewind:
-  ; TODO: add timeout
-  ; TODO: wait not ready
-  ;lda FDS_DRIVE_STATUS
-  ;and #FDS_DRIVE_STATUS_DISK_NOT_READY
-  ;beq .rewind
 .not_ready:
   ; TODO: add timeout
   lda FDS_DRIVE_STATUS
@@ -44,7 +44,7 @@ read_disk:
   ; start reading
 .next_block
   jsr read_block
-  lda STOP_REASON
+  lda <STOP_REASON
   beq .next_block
   ; reset and stop motor
   lda #(FDS_CONTROL_READ | FDS_CONTROL_MOTOR_OFF)
@@ -63,11 +63,11 @@ read_block:
   jsr calculate_block_size
   ; check free memory
   sec
-  lda #$00
+  lda #(MEMORY_END & $FF)
   sbc <READ_OFFSET
   sta <TEMP
-  lda #$C0
-  lda <READ_OFFSET + 1
+  lda #((MEMORY_END >> 8) & $FF)
+  sbc <READ_OFFSET + 1
   sta <TEMP + 1
   ; now TEMP = memory left
   sec
@@ -77,7 +77,7 @@ read_block:
   sbc <BYTES_LEFT + 1
   bcs .memory_ok
   ;print_line "OUT OF MEMORY"
-  lda #2
+  lda #STOP_OUT_OF_MEMORY
   sta <STOP_REASON
   rts
 .memory_ok
@@ -93,26 +93,21 @@ read_block:
   ; wait for data
 .wait_data
   ; TODO: timeout
+  lda <STOP_REASON
+  bne .end
   lda <CRC_RESULT
   beq .wait_data
   cmp #1
-  beq .CRC_ok
-  ; bad CRC
-  ;print_line "BAD CRC"
-  lda #1
-  sta <STOP_REASON
-  rts
+  bne .end
 .CRC_ok:
   ; end of read  
   inc <BLOCK_CURRENT
   ; update BLOCKS_READ if it's lower than BLOCK_CURRENT
   lda <BLOCK_CURRENT
   cmp <BLOCKS_READ
-  bcc .no_new_blocks
+  bcc .end
   sta <BLOCKS_READ
-.no_new_blocks:
-  lda #0
-  sta <STOP_REASON
+.end:
   rts
 
 calculate_block_size:
@@ -168,9 +163,9 @@ IRQ_disk_read:
   cmp <BLOCK_TYPE
   beq .type_check_end
   ; invalid block
-  lda #(FDS_CONTROL_READ | FDS_CONTROL_MOTOR_ON)
-  sta FDS_CONTROL
   dec <CRC_RESULT
+  lda #STOP_CRC_ERROR
+  sta <STOP_REASON
   rti
 .type_check_end:
   ; do not check again, first byte only
@@ -227,6 +222,8 @@ IRQ_disk_read_CRC:
   lda #(FDS_CONTROL_READ | FDS_CONTROL_MOTOR_ON)
   sta FDS_CONTROL
   dec <CRC_RESULT
+  lda #STOP_CRC_ERROR
+  sta <STOP_REASON
   rti
 .CRC_ok:
   ; CRC ok!

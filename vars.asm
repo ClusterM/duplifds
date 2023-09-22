@@ -12,9 +12,25 @@ FILE_AMOUNT      .rs 1  ; visible file amount
 BLOCK_AMOUNT     .rs 1  ; visible block amount (file_amount*2+2)
 NEXT_FILE_SIZE   .rs 2  ; size of the next file
 CRC_STATE        .rs 1  ; CRC state calculation (2=finished)
-CRC_RESULT       .rs 1  ; CRC: 0 - not calculated yet, 1 - ok, $FF - bad CRC
-STOP_REASON      .rs 1  ; read stop reason: 0 - success, 1 - CRC error, 2 - out of memory
+; CRC:
+; 0 - not calculated yet
+; 1 - ok
+; $FF - bad CRC
+CRC_RESULT       .rs 1
+; read stop reason:
+; 0 - success
+; 1 - CRC error/bad block
+; 2 - out of memory
+STOP_REASON      .rs 1  ; read stop reason
 BLOCKS_READ      .rs 1  ; amount of blocks read
 BLOCKS_WRITTEN   .rs 1  ; amount of blocks written
 HEADER_CACHE     .rs 56 ; cached disk header
 
+STOP_SUCCESS         .equ 0
+STOP_CRC_ERROR       .equ 1
+STOP_OUT_OF_MEMORY   .equ 2
+STOP_NO_DISK         .equ 3
+STOP_NO_POWER        .equ 4
+
+MEMORY_START         .equ $6000
+MEMORY_END           .equ $C000
