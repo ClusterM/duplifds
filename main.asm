@@ -94,25 +94,18 @@ main:
   cursor_to 1, 2
 
   print_line "STARTED"
-  print_line "EJECT DISK"
-
-.wait_eject
-  lda FDS_DRIVE_STATUS
-  and #%00000001
-  beq .wait_eject  
-  print_line "INSERT SOURCE DISK"  
-.wait_insert
-  lda FDS_DRIVE_STATUS
-  and #%00000001
-  bne .wait_insert
-  print_line "READING"  
+ 
   lda #0
   sta BLOCK_CURRENT
   sta BLOCKS_READ
   sta BLOCKS_WRITTEN
   sta FILE_AMOUNT
   sta BLOCK_AMOUNT
-  jsr read_disk
+
+  jsr ask_source_disk
+  lda #OPERATION_READING
+  sta OPERATION
+  jsr transfer
   print_line "DONE!"
 
   ; main loop        
@@ -121,6 +114,32 @@ infin:
   jsr waitblank
   jsr ReadOrDownPads
   jmp infin
+
+ask_source_disk:
+  print_line "EJECT DISK"
+.wait_eject
+  lda FDS_DRIVE_STATUS
+  and #FDS_DRIVE_STATUS_DISK_NOT_INSERTED
+  beq .wait_eject  
+  print_line "INSERT SOURCE DISK"  
+.wait_insert
+  lda FDS_DRIVE_STATUS
+  and #FDS_DRIVE_STATUS_DISK_NOT_INSERTED
+  bne .wait_insert
+  rts
+
+ask_target_disk:
+  print_line "EJECT DISK"
+.wait_eject
+  lda FDS_DRIVE_STATUS
+  and #FDS_DRIVE_STATUS_DISK_NOT_INSERTED
+  beq .wait_eject  
+  print_line "INSERT TARGET DISK"  
+.wait_insert
+  lda FDS_DRIVE_STATUS
+  and #FDS_DRIVE_STATUS_DISK_NOT_INSERTED
+  bne .wait_insert
+  rts
 
 waitblank:
   jsr scroll_fix
@@ -140,6 +159,7 @@ scroll_fix:
   pla
   rts
 
+  ; writed zero-terminated string
 write_text:
   ldy #0
 .loop:
@@ -151,6 +171,7 @@ write_text:
 .end:
   rts
 
+; delay for TIMER_COUNTER*1000 CPU cycles
 delay_sub:
   set_IRQ IRQ_delay
   lda #(1000 & $FF)
@@ -167,7 +188,6 @@ delay_sub:
   lda #%00000000
   sta FDS_TIMER_CONTROL
   rts
-
 IRQ_delay:
   bit FDS_DISK_STATUS
   lda <TIMER_COUNTER
@@ -189,7 +209,7 @@ IRQ_delay:
   rti
 
 NMI:
-  ; 
+  ; reset to the main entry point
   lda #$35
   sta $102
   lda #$AC
