@@ -100,7 +100,7 @@ transfer:
 
 read_block:
   ; calculating gap size
-  lda BLOCK_CURRENT
+  lda <BLOCK_CURRENT
   ; delay before block
   bne .not_first_block
   delay 487
@@ -151,11 +151,13 @@ read_block:
   bne .end
 .CRC_ok:
   ; end of read  
+  ; update BLOCKS_READ if need
   inc <BLOCK_CURRENT
-  ; update BLOCKS_READ if reading
-  ldx OPERATION
-  bne .end
-  inc <BLOCKS_READ
+  lda <BLOCK_CURRENT
+  cmp <BLOCKS_READ
+  bcc .skip_read_inc
+  sta <BLOCKS_READ
+.skip_read_inc:
 .end:
   rts
 
@@ -164,10 +166,12 @@ IRQ_disk_read:
   ; store data
   ldy #0
   lda FDS_DATA_READ
-  ldx OPERATION
-  bne .dummy_reading_end
+  ; skip blocks that already read
+  ldx <BLOCK_CURRENT
+  cpx <BLOCKS_READ
+  bcc .dummy_reading
   sta [READ_OFFSET], y
-.dummy_reading_end:
+.dummy_reading:
   ; ack (is it required?)
   ldx #0
   stx FDS_DATA_WRITE
@@ -194,9 +198,10 @@ IRQ_disk_read:
   beq .skip_parse
   jsr parse_block
 .skip_parse:
-  ; increase address offset if reading
-  ldx <OPERATION
-  bne .skip_inc_total_offset
+  ; increase address offset if reading new data
+  lda <BLOCK_CURRENT
+  cmp <BLOCKS_READ
+  bcc .skip_inc_total_offset
   inc <READ_OFFSET
   bne .skip_inc_total_offset
   inc <READ_OFFSET + 1
@@ -429,8 +434,8 @@ parse_block:
   ; disk header block?
   cpy #1
   bne .not_header  
-  ; cache or compare?  
-  ldy <OPERATION
+  ; cache or compare?
+  ldy <BLOCKS_WRITTEN
   bne .compare_header
   ; store header in the permanent area
   sta <HEADER_CACHE, x

@@ -8,7 +8,7 @@
   .dw Start
   .dw IRQ_disk_read
 
-  .org $C000  ; code starts at $C000
+  .org $D000  ; code starts at $D000
 Start:
   ; disable PPU
   lda #%00000000
@@ -91,20 +91,19 @@ clear_nametable:
   cli ; enable interrupts
 
 main:
-  cursor_to 1, 2
-
-  print_line "STARTED"
+  cursor_to 1, 1
  
   lda #0
-  sta BLOCK_CURRENT
-  sta BLOCKS_READ
-  sta BLOCKS_WRITTEN
-  sta FILE_AMOUNT
-  sta BLOCK_AMOUNT
+  sta <BLOCKS_READ
+  sta <BLOCKS_WRITTEN
+  sta <BLOCK_AMOUNT
+  sta <FILE_AMOUNT
+  sta <READ_FULL
 
+.copy_loop
   jsr ask_source_disk
   lda #OPERATION_READING
-  sta OPERATION
+  sta <OPERATION
   jsr transfer
   print "BLOCKS: "
   ldx <BLOCKS_READ
@@ -114,6 +113,38 @@ main:
   ldx <STOP_REASON
   jsr write_byte
   jsr next_line
+
+  lda <STOP_REASON
+  cmp #STOP_CRC_ERROR
+  bne .not_crc_error
+  ; it's ok if all visible files are read
+  lda <BLOCKS_READ
+  cmp <BLOCK_AMOUNT
+  bcs .not_crc_error_disk_done
+  ; bad block :(
+  jmp print_error
+.not_crc_error_disk_done:
+  inc <READ_FULL
+  jmp .ok_lets_write
+.not_crc_error:
+  ; out of memory?
+  lda <STOP_REASON
+  cmp #STOP_OUT_OF_MEMORY
+  bne .not_out_of_memory
+  lda <BLOCKS_READ
+  cmp <BLOCKS_WRITTEN
+  bne .memory_non_clitical
+  ; can't fit in the memory ever single block
+  jmp print_error
+.memory_non_clitical:
+  ; it's ok, we'll write in multiple passes
+  jmp .ok_lets_write
+.not_out_of_memory:
+  ; other error
+  jmp print_error
+.ok_lets_write:
+
+
   ;jsr waitblank
   ;jsr update_cursor
   ;lda #$00
@@ -124,18 +155,74 @@ main:
   ;jsr next_line
   jsr ask_target_disk
   lda #OPERATION_WRITING
-  sta OPERATION
+  sta <OPERATION
   jsr transfer
   print "RESULT CODE: "
   ldx <STOP_REASON
   jsr write_byte
   jsr next_line
+  lda <STOP_REASON
+  cmp #STOP_NONE
+  beq .write_ok
+  jmp print_error
+.write_ok:
+  lda READ_FULL
+  bne .success
+  jmp .copy_loop
+
+.success:
+  print_line "DONE!"
 
   ; main loop        
 infin:
   delay 100
   jsr waitblank
   jsr ReadOrDownPads
+  jmp infin
+
+print_error:
+  lda <STOP_REASON
+  cmp #STOP_NONE
+  bne .not_none
+  print_line "NO ERROR"
+  jmp infin
+.not_none:
+  cmp #STOP_CRC_ERROR
+  bne .not_crc
+  print_line "ERROR: BAD BLOCK"
+  jmp infin
+.not_crc:
+  cmp #STOP_OUT_OF_MEMORY
+  bne .not_out_of_memory
+  print_line "ERROR: OUT OF MEMORY"
+  jmp infin
+.not_out_of_memory:
+  cmp #STOP_NO_DISK
+  bne .not_no_disk
+  print_line "ERROR: NO DISK"
+  jmp infin
+.not_no_disk:
+  cmp #STOP_NO_POWER
+  bne .not_no_power
+  print_line "ERROR: NO POWER"
+  jmp infin
+.not_no_power:
+  cmp #STOP_END_OF_HEAD
+  bne .not_end_of_head
+  print_line "ERROR: DISK IS FULL"
+  jmp infin
+.not_end_of_head:
+  cmp #STOP_WRONG_HEADER
+  bne .not_wrong_header
+  print_line "ERROR: DIFFERENT DISK"
+  jmp infin
+.not_wrong_header:
+  cmp #STOP_NOT_READY
+  bne .not_not_ready
+  print_line "ERROR: NOT READY (?)"
+  jmp infin
+.not_not_ready:
+  print_line "UNKNOWN ERROR"
   jmp infin
 
 ask_source_disk:

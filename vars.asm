@@ -20,7 +20,8 @@ OPERATION        .rs 1  ; current operation code: 0 - reading, 1 - writing, 2 - 
 STOP_REASON      .rs 1  ; read/write stop reason
 BLOCKS_READ      .rs 1  ; amount of blocks read
 BLOCKS_WRITTEN   .rs 1  ; amount of blocks written
-WRITING_STATE    .rs 1
+WRITING_STATE    .rs 1  ; current state of writing
+READ_FULL        .rs 1  ; non-zero when source disk reading fully completed
 HEADER_CACHE     .rs 56 ; cached disk header
 
 STOP_NONE            .equ 0
@@ -37,4 +38,4 @@ OPERATION_WRITING    .equ 1
 OPERATION_VIRIFYING  .equ 2
 
 MEMORY_START         .equ $6000
-MEMORY_END           .equ $C000
+MEMORY_END           .equ $D000
