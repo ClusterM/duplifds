@@ -5,8 +5,11 @@ TEMP             .rs 2  ; just temporary memory
 TIMER_COUNTER    .rs 2  ; timer counter (1 for 1000 ticks)
 CURSOR           .rs 2  ; for debugging
 BLOCK_CURRENT    .rs 1  ; number of the current block
-BLOCK_TYPE       .rs 1  ; type that _should_ be for the current block
-BYTES_LEFT       .rs 2  ; bytes left of the current block
+BLOCK_TYPE_TEST  .rs 1  ; type that _should_ be for the current block
+BLOCK_TYPE_ACT   .rs 1  ; type the current block
+;BYTES_LEFT       .rs 2  ; bytes left of the current block
+BLOCK_SIZE       .rs 2  ; current block size
+BLOCK_OFFSET     .rs 2  ; current block offset
 READ_OFFSET      .rs 2  ; current read/write position in memory
 FILE_AMOUNT      .rs 1  ; visible file amount
 BLOCK_AMOUNT     .rs 1  ; visible block amount (file_amount*2+2)

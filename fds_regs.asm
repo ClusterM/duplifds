@@ -9,23 +9,27 @@ ReadDownExpPads      .equ $EA68
 SetScroll            .equ $EAEA
 
 ; FDS registers
-FDS_TIMER_LOW        .equ $4020
-FDS_TIMER_HIGH       .equ $4021
-FDS_TIMER_CONTROL    .equ $4022
-FDS_MASTER_IO        .equ $4023
-FDS_DATA_WRITE       .equ $4024
-FDS_CONTROL          .equ $4025
-FDS_EXT_WRITE        .equ $4026
-FDS_DISK_STATUS      .equ $4030
-FDS_DATA_READ        .equ $4031
-FDS_DRIVE_STATUS     .equ $4032
-FDS_EXT_READ         .equ $4033
+  .rsset $4020
+FDS_TIMER_LOW        .rs 1
+FDS_TIMER_HIGH       .rs 1
+FDS_TIMER_CONTROL    .rs 1
+FDS_MASTER_IO        .rs 1
+FDS_DATA_WRITE       .rs 1
+FDS_CONTROL          .rs 1
+FDS_EXT_WRITE        .rs 1
+  .rsset $4030
+FDS_DISK_STATUS      .rs 1
+FDS_DATA_READ        .rs 1
+FDS_DRIVE_STATUS     .rs 1
+FDS_EXT_READ         .rs 1
 
 ; values for FDS_CONTROL
 FDS_CONTROL_MOTOR_ON      .equ %00100001
 FDS_CONTROL_MOTOR_OFF     .equ %00100010
 FDS_CONTROL_READ          .equ %00100100
 FDS_CONTROL_WRITE         .equ %00100000
+FDS_CONTROL_MIRR_H        .equ %00101000
+FDS_CONTROL_MIRR_V        .equ %00100000
 FDS_CONTROL_CRC           .equ %00110000
 FDS_CONTROL_TRANSFER_ON   .equ %01100000
 FDS_CONTROL_IRQ_ON        .equ %10100000

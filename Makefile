@@ -29,7 +29,7 @@ clean:
 run: $(OUTPUT_IMAGE)
 	$(EMU) $(OUTPUT_IMAGE)
 
-write:
+write: $(OUTPUT_IMAGE)
 	$(FAMICOM_DUMPER) write-fds --verify --file $(OUTPUT_IMAGE)
 
 $(ASCII_PATTERN) $(PALETTE0): $(ASCII_IMAGE)

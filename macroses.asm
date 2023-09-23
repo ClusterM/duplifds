@@ -10,16 +10,11 @@ cursor_to .macro
 
 print .macro
   .print_\@:
-  jsr waitblank
-  lda PPUSTATUS
-  lda CURSOR
-  sta PPUADDR
-  lda CURSOR + 1
-  sta PPUADDR
+  jsr update_cursor
   lda #LOW(.text\@)
-  sta COPY_SOURCE_ADDR
+  sta <COPY_SOURCE_ADDR
   lda #HIGH(.text\@)
-  sta COPY_SOURCE_ADDR+1
+  sta <COPY_SOURCE_ADDR+1
   jsr write_text
   jsr scroll_fix
   jmp .end_print\@
@@ -29,31 +24,19 @@ print .macro
   .endm
 
 print_line .macro
-  .print_line_\@:
-  jsr waitblank
-  lda PPUSTATUS
-  lda CURSOR
-  sta PPUADDR
-  lda CURSOR + 1
-  sta PPUADDR
+  .print_\@:
+  jsr update_cursor
   lda #LOW(.text\@)
-  sta COPY_SOURCE_ADDR
+  sta <COPY_SOURCE_ADDR
   lda #HIGH(.text\@)
-  sta COPY_SOURCE_ADDR+1
+  sta <COPY_SOURCE_ADDR+1
   jsr write_text
   jsr scroll_fix
-  ; go to the next line
-  clc
-  lda CURSOR + 1
-  adc #32
-  sta CURSOR + 1
-  lda CURSOR
-  adc #0
-  sta CURSOR
   jmp .end_print\@
   .text\@:
   .db \1, #0
   .end_print\@:
+  jsr next_line
   .endm
 
 ; macro to print text: print x, y, text

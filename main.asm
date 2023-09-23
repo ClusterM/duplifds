@@ -106,12 +106,30 @@ main:
   lda #OPERATION_READING
   sta OPERATION
   jsr transfer
+  print "BLOCKS: "
+  ldx <BLOCKS_READ
+  jsr write_byte
+  jsr next_line
+  print "RESULT CODE: "
+  ldx <STOP_REASON
+  jsr write_byte
+  jsr next_line
+  jsr waitblank
+  jsr update_cursor
+  lda #$00
+  sta <COPY_SOURCE_ADDR
+  lda #$60
+  sta <COPY_SOURCE_ADDR + 1
+  jsr hexdump
+  jsr next_line
   jsr ask_target_disk
   lda #OPERATION_WRITING
   sta OPERATION
   jsr transfer
-  
-  print_line "DONE!"
+  print "RESULT CODE: "
+  ldx <STOP_REASON
+  jsr write_byte
+  jsr next_line
 
   ; main loop        
 infin:
@@ -171,9 +189,94 @@ write_text:
   lda [COPY_SOURCE_ADDR], y
   beq .end  
   sta PPUDATA
+  jsr add_cursor
   iny
   bne .loop
 .end:
+  rts
+
+hexdump:
+  ldy #0
+.loop:
+  lda [COPY_SOURCE_ADDR], y
+  tax
+  jsr waitblank
+  jsr update_cursor
+  jsr write_byte
+  iny
+  cpy #200
+  bne .loop
+  rts
+
+update_cursor:
+  pha
+  jsr waitblank
+  lda PPUSTATUS
+  lda <CURSOR
+  sta PPUADDR
+  lda <CURSOR + 1
+  sta PPUADDR
+  pla
+  rts
+
+add_cursor:
+  pha
+  lda CURSOR + 1
+  adc #1
+  sta CURSOR + 1
+  lda CURSOR
+  adc #0
+  sta CURSOR
+  pla
+  rts
+
+next_line:
+  pha
+  lda <CURSOR + 1
+  and #$E0
+  sta <CURSOR + 1
+  clc
+  lda <CURSOR + 1
+  adc #33
+  sta CURSOR + 1
+  lda CURSOR
+  adc #0
+  sta CURSOR
+  pla
+  rts
+
+write_byte:
+  pha
+  txa
+  pha
+  pha
+  lsr A
+  lsr A
+  lsr A
+  lsr A
+  tax
+  jsr write_digit
+  pla
+  and #$0F
+  tax
+  jsr write_digit
+  pla
+  tax
+  pla
+  jsr add_cursor
+  rts   
+
+write_digit:
+  txa
+  cmp #10
+  bcc .low
+  clc
+  adc #7
+.low:
+  clc
+  adc #$30
+  sta PPUDATA
+  jsr add_cursor
   rts
 
 ; delay for TIMER_COUNTER*1000 CPU cycles
