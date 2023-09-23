@@ -114,14 +114,14 @@ main:
   ldx <STOP_REASON
   jsr write_byte
   jsr next_line
-  jsr waitblank
-  jsr update_cursor
-  lda #$00
-  sta <COPY_SOURCE_ADDR
-  lda #$60
-  sta <COPY_SOURCE_ADDR + 1
-  jsr hexdump
-  jsr next_line
+  ;jsr waitblank
+  ;jsr update_cursor
+  ;lda #$00
+  ;sta <COPY_SOURCE_ADDR
+  ;lda #$60
+  ;sta <COPY_SOURCE_ADDR + 1
+  ;jsr hexdump
+  ;jsr next_line
   jsr ask_target_disk
   lda #OPERATION_WRITING
   sta OPERATION

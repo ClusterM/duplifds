@@ -265,17 +265,16 @@ write_block:
   ; need to write zero (?)
   lda #0
   sta FDS_DATA_WRITE
-  ; reset writing state
+    ; reset variables
   lda #0
   sta <WRITING_STATE
+  sta <BLOCK_OFFSET
+  sta <BLOCK_OFFSET + 1
   ; set IRQ vector
   set_IRQ IRQ_disk_write
   ; start transfer, enable IRQ
   lda #(FDS_CONTROL_WRITE | FDS_CONTROL_MOTOR_ON | FDS_CONTROL_TRANSFER_ON | FDS_CONTROL_IRQ_ON)
   sta FDS_CONTROL
-  lda FDS_DATA_READ
-  lda #$80
-  sta FDS_DATA_WRITE
 .wait_write_end:
   lda <STOP_REASON
   bne .end
@@ -283,7 +282,10 @@ write_block:
   cmp #3
   bne .wait_write_end
   ; wait while CRC is writing
-  delay 1
+  ldx #$B2
+.write_CRC_wait:
+  dex
+  bne .write_CRC_wait
 .wait_ready:
   ; do we really need to wait?
   lda FDS_DRIVE_STATUS
@@ -303,57 +305,56 @@ write_block:
 
 IRQ_disk_write:
   pha
-;  ;lda FDS_DISK_STATUS
-;  ; discard input byte
-;  lda FDS_DATA_READ
-;  ; start bit written?
-;  lda WRITING_STATE
-;  bne .not_writing_data
-;  ldy #0
-;  lda [READ_OFFSET], y
-;  sta FDS_DATA_WRITE
-;  ; TODO: copy protection bypass
-;  jsr parse_block
-;  ; increase address offset
-;  clc
-;  lda <READ_OFFSET
-;  adc #1
-;  sta <READ_OFFSET
-;  lda <READ_OFFSET + 1
-;  adc #0
-;  sta <READ_OFFSET + 1
-;; decrement bytes left
-;  sec
-;  lda <BYTES_LEFT
-;  sbc #1
-;  sta <BYTES_LEFT
-;  lda <BYTES_LEFT + 1
-;  sbc #0
-;  sta <BYTES_LEFT + 1
-;  ; check if end of data
-;  bne .end
-;  lda <BYTES_LEFT
-;  bne .end
-;  inc WRITING_STATE ; 1
-;  pla
-;  rti
-;.not_writing_data:
-;  cmp #1
-;  bne .not_writing_FF
-;  ; writing $FF
-;  lda #$FF
-;  sta FDS_DATA_WRITE
-;  inc WRITING_STATE ; 2
-;  pla
-;  rti
-;.not_writing_FF: 
-;  cmp #2
-;  bne .end
-;  ; enable CRC control
-;  lda #(FDS_CONTROL_WRITE | FDS_CONTROL_MOTOR_ON | FDS_CONTROL_TRANSFER_ON | FDS_CONTROL_CRC)
-;  sta FDS_CONTROL
-;  inc WRITING_STATE ; 3
-;.end:
+  ; discard input byte
+  lda FDS_DATA_READ
+  lda <WRITING_STATE
+  bne .not_writing_start_bit
+  ; need to write start bit
+  lda #$80
+  sta FDS_DATA_WRITE
+  inc <WRITING_STATE ; 1
+  pla
+  rti
+.not_writing_start_bit:
+  cmp #1
+  bne .not_writina_data
+  ; write actual data
+  ldy #0
+  lda [READ_OFFSET], y
+  sta FDS_DATA_WRITE
+  ; TODO: copy protection bypass
+  jsr parse_block
+  ; increase address offset if reading
+  inc <READ_OFFSET
+  bne .total_offset_end
+  inc <READ_OFFSET + 1
+.total_offset_end
+  ; increse current block offset
+  inc <BLOCK_OFFSET
+  bne .block_offset_end
+  inc <BLOCK_OFFSET + 1
+.block_offset_end:
+  lda <BLOCK_OFFSET
+  cmp <BLOCK_SIZE
+  bne .end
+  lda <BLOCK_OFFSET + 1
+  cmp <BLOCK_SIZE + 1
+  bne .end
+  ; end of data
+  inc <WRITING_STATE ; 2
+  pla 
+  rti
+.not_writina_data:  
+  cmp #2
+  bne .end
+  ; writing CRC
+  lda #$FF
+  sta FDS_DATA_WRITE
+  ;lda #(FDS_CONTROL_WRITE | FDS_CONTROL_MOTOR_ON | FDS_CONTROL_TRANSFER_ON | FDS_CONTROL_IRQ_ON | FDS_CONTROL_CRC)
+  lda #(FDS_CONTROL_WRITE | FDS_CONTROL_MOTOR_ON | FDS_CONTROL_TRANSFER_ON | FDS_CONTROL_CRC)
+  sta FDS_CONTROL
+  inc WRITING_STATE ; 3
+.end:
   pla
   rti
 
@@ -412,7 +413,7 @@ parse_block:
   cpy #1
   bne .not_header  
   ; cache or compare?  
-  ldy OPERATION
+  ldy <OPERATION
   bne .compare_header
   ; store header in the permanent area
   sta <HEADER_CACHE, x
