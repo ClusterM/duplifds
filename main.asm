@@ -149,6 +149,7 @@ ask_source_disk:
   lda FDS_DRIVE_STATUS
   and #FDS_DRIVE_STATUS_DISK_NOT_INSERTED
   bne .wait_insert
+  print_line "READING..."
   rts
 
 ask_target_disk:
@@ -162,6 +163,7 @@ ask_target_disk:
   lda FDS_DRIVE_STATUS
   and #FDS_DRIVE_STATUS_DISK_NOT_INSERTED
   bne .wait_insert
+  print_line "WRITING..."
   rts
 
 waitblank:

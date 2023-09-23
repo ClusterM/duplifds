@@ -30,6 +30,7 @@ STOP_NO_DISK         .equ 3
 STOP_NO_POWER        .equ 4
 STOP_END_OF_HEAD     .equ 5
 STOP_WRONG_HEADER    .equ 6
+STOP_NOT_READY       .equ 7
 
 OPERATION_READING    .equ 0
 OPERATION_WRITING    .equ 1

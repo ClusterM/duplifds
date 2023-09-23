@@ -9,15 +9,6 @@ transfer:
   ; reset
   lda #(FDS_CONTROL_READ | FDS_CONTROL_MOTOR_OFF)
   sta FDS_CONTROL
-  ; check disk
-  ;lda FDS_DRIVE_STATUS
-  ;and #FDS_DRIVE_STATUS_DISK_NOT_INSERTED
-  ;beq .disk_inserted
-  ; disk not inserted
-  ;lda #STOP_NO_DISK
-  ;sta <STOP_REASON
-  ;jmp .end
-.disk_inserted:
   ; start motor
   lda #(FDS_CONTROL_READ | FDS_CONTROL_MOTOR_ON)
   sta FDS_CONTROL
@@ -38,6 +29,15 @@ transfer:
   sta <BLOCK_CURRENT
 .not_ready_yet:
   ; TODO: add timeout
+  ; check if disk removed
+  lda FDS_DRIVE_STATUS
+  and #FDS_DRIVE_STATUS_DISK_NOT_INSERTED
+  beq .disk_inserted1
+  ; disk not inserted
+  lda #STOP_NO_DISK
+  sta <STOP_REASON
+  jmp .end
+.disk_inserted1:
   lda FDS_DRIVE_STATUS
   and #FDS_DRIVE_STATUS_DISK_NOT_READY
   bne .not_ready_yet
@@ -73,11 +73,20 @@ transfer:
   jmp .block_end
 .not_writing:
 .block_end
+  ; check if disk removed
+  lda FDS_DRIVE_STATUS
+  and #FDS_DRIVE_STATUS_DISK_NOT_INSERTED
+  beq .disk_inserted2
+  ; disk not inserted
+  lda #STOP_NO_DISK
+  sta <STOP_REASON
+  jmp .end
+.disk_inserted2:
   ; check for end of the disk
   lda FDS_DISK_STATUS
   and FDS_DISK_STATUS_END_OF_HEAD
   beq .no_end_of_head
-  lda #STOP_NO_POWER
+  lda #STOP_END_OF_HEAD
   sta <STOP_REASON
   jmp .end
 .no_end_of_head:
@@ -179,7 +188,12 @@ IRQ_disk_read:
   stx <BLOCK_TYPE_TEST
 .type_check_end:
   ; parse
+  ; fast check
+  ldx <BLOCK_TYPE_ACT
+  cpx #4
+  beq .skip_parse
   jsr parse_block
+.skip_parse:
   ; increase address offset if reading
   ldx <OPERATION
   bne .skip_inc_total_offset
@@ -243,7 +257,6 @@ IRQ_disk_read_CRC:
   ; CRC ok!
   lda #(FDS_CONTROL_READ | FDS_CONTROL_MOTOR_ON)
   sta FDS_CONTROL
-  jsr parse_block
   inc <CRC_RESULT
   pla
   rti
@@ -265,7 +278,7 @@ write_block:
   ; need to write zero (?)
   lda #0
   sta FDS_DATA_WRITE
-    ; reset variables
+  ; reset variables
   lda #0
   sta <WRITING_STATE
   sta <BLOCK_OFFSET
@@ -287,10 +300,14 @@ write_block:
   dex
   bne .write_CRC_wait
 .wait_ready:
-  ; do we really need to wait?
+  ; do we really need this check?
   lda FDS_DRIVE_STATUS
   and #FDS_DRIVE_STATUS_DISK_NOT_READY
-  bne .wait_ready
+  beq .ready_ok
+  lda #STOP_NOT_READY
+  sta <STOP_REASON
+  jmp .end
+.ready_ok:
   ; motor on without transfer
   lda #(FDS_CONTROL_READ | FDS_CONTROL_MOTOR_ON)
   sta FDS_CONTROL
