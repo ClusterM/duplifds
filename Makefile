@@ -21,31 +21,43 @@ BG_PATTERN=bg_pattern_table.bin
 BG_NAMETABLE=bg_nametable.bin
 BG_ATTR_TABLE=bg_attr_table.bin
 
+S_PRITES=sprites.png
+S_PATTERN=spr_pattern_table.bin
+S_PALETTE0=spalette0.bin
+
+
 all: $(OUTPUT_IMAGE)
 
 build: $(OUTPUT_IMAGE)
 
-$(EXECUTABLE): $(SOURCE) $(SOURCE_MORE) $(BG_PATTERN) $(PALETTE0) $(PALETTE1) $(PALETTE2) $(PALETTE3) $(BG_NAMETABLE) $(BG_ATTR_TABLE)
-	rm -f $(EXECUTABLE)
+$(EXECUTABLE): $(SOURCE) $(SOURCE_MORE) $(BG_PATTERN) $(PALETTE0) $(PALETTE1) $(PALETTE2) $(PALETTE3) $(BG_NAMETABLE) $(BG_ATTR_TABLE) $(S_PATTERN) $(S_PALETTE0)
 	$(NESASM) $(SOURCE) -o $(EXECUTABLE) --symbols=$(OUTPUT_IMAGE) -iWssr
 
 $(OUTPUT_IMAGE): $(EXECUTABLE) diskinfo.json
 	$(FDSPACKER) pack diskinfo.json $(OUTPUT_IMAGE)
 
-$(BG_PATTERN) $(PALETTE0) $(PALETTE1) $(PALETTE2) $(PALETTE3) $(BG_NAMETABLE) $(BG_ATTR_TABLE): $(ASCII_IMAGE) $(BG_IMAGE)
+ $(BG_PATTERN) $(PALETTE0) $(PALETTE1) $(PALETTE2) $(PALETTE3) $(BG_NAMETABLE) $(BG_ATTR_TABLE): $(ASCII_IMAGE) $(BG_IMAGE)
 	$(TILER) -i0 $(ASCII_IMAGE) -i1 $(BG_IMAGE) \
-  --bg-color \#000000 --share-pattern-table \
-  --palette-0 \#c4c4c4,\#183c5c,\#0070ec \
-  --palette-1 \#c4c4c4,\#183c5c,\#f0bc3c \
-  --palette-2 \#c4c4c4,\#183c5c,\#ff0000 \
-  --palette-3 \#24188c,\#7c0800,\#ffffff \
-  --out-pattern-table $(BG_PATTERN) \
-  --out-palette-0 $(PALETTE0) \
-  --out-palette-1 $(PALETTE1) \
-  --out-palette-2 $(PALETTE2) \
-  --out-palette-3 $(PALETTE3) \
-  --out-name-table-1 $(BG_NAMETABLE) \
-  --out-attribute-table-1 $(BG_ATTR_TABLE)
+	--bg-color \#000000 --share-pattern-table \
+	--palette-0 \#c4c4c4,\#183c5c,\#0070ec \
+	--palette-1 \#c4c4c4,\#183c5c,\#f0bc3c \
+	--palette-2 \#c4c4c4,\#183c5c,\#ff0000 \
+	--palette-3 \#24188c,\#7c0800,\#ffffff \
+	--out-pattern-table $(BG_PATTERN) \
+	--out-palette-0 $(PALETTE0) \
+	--out-palette-1 $(PALETTE1) \
+	--out-palette-2 $(PALETTE2) \
+	--out-palette-3 $(PALETTE3) \
+	--out-name-table-1 $(BG_NAMETABLE) \
+	--out-attribute-table-1 $(BG_ATTR_TABLE)
+
+$(S_PATTERN) $(S_PALETTE0): $(S_PRITES)
+	$(TILER) -i0 $(S_PRITES) \
+	--bg-color \#000000 \
+	--mode sprites8x8 \
+	--palette-0 \#a8f0bc,\#f0bc3c,\#7c0800 \
+	--out-pattern-table $(S_PATTERN) \
+	--out-palette-0 $(S_PALETTE0)
 
 clean:
 	rm -f $(EXECUTABLE) $(OUTPUT_IMAGE) *.lst *.nl *.bin 

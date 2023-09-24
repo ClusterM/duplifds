@@ -22,6 +22,7 @@ BLOCKS_READ      .rs 1  ; amount of blocks read
 BLOCKS_WRITTEN   .rs 1  ; amount of blocks written
 WRITING_STATE    .rs 1  ; current state of writing
 READ_FULL        .rs 1  ; non-zero when source disk reading fully completed
+ANIMATION_STATE  .rs 1  ; animation state
 HEADER_CACHE     .rs 56 ; cached disk header
 
 STOP_NONE            .equ 0

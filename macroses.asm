@@ -27,3 +27,10 @@ set_IRQ .macro
   lda #HIGH(\1)
   sta IRQ_VECTOR + 1
   .endm
+
+set_NMI .macro
+  lda #LOW(\1)
+  sta NMI_VECTOR
+  lda #HIGH(\1)
+  sta NMI_VECTOR + 1
+  .endm

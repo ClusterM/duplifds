@@ -57,8 +57,25 @@ load_palette:
   lda palette, x
   sta PPUDATA
   inx
-  cpx #16
+  cpx #20
   bne .loop
+
+  jsr waitblank
+load_sprites:  
+  lda #0 
+  sta OAMADDR
+  ldy #0
+.loop:
+  lda sprites, y
+  sta OAMDATA
+  iny
+  cpy #(sprites_end - sprites)
+  bne .loop
+  lda #$FF
+.blank_loop:
+  sta OAMDATA
+  iny
+  bne .blank_loop  
 
   ; loading blank nametable
 ;clear_nametable:
@@ -91,7 +108,7 @@ load_palette:
   sta PPUADDR
   sta PPUADDR
   jsr waitblank
-  lda #%00001010
+  lda #%00011110
   sta PPUMASK  
 
   cli ; enable interrupts
@@ -195,10 +212,10 @@ main:
 
   print "DONE!"
 
-.wait_eject
+done:
   lda FDS_DRIVE_STATUS
   and #FDS_DRIVE_STATUS_DISK_NOT_INSERTED
-  beq .wait_eject  
+  beq done
   jmp main
 
   ; main loop        
@@ -208,44 +225,46 @@ infin:
   jmp infin
 
 print_error:
+  jsr waitblank
+  jsr led_off
   lda <STOP_REASON
   cmp #STOP_CRC_ERROR
   bne .not_crc
-  print "ERR: BAD BLOCK"
-  jmp infin
+  print "ERR:BAD BLOCK"
+  jmp done
 .not_crc:
   cmp #STOP_OUT_OF_MEMORY
   bne .not_out_of_memory
   print "ERR:OUT OF MEMORY"
-  jmp infin
+  jmp done
 .not_out_of_memory:
   cmp #STOP_NO_DISK
   bne .not_no_disk
   print "ERR:NO DISK"
-  jmp infin
+  jmp done
 .not_no_disk:
   cmp #STOP_NO_POWER
   bne .not_no_power
   print "ERR:NO POWER"
-  jmp infin
+  jmp done
 .not_no_power:
   cmp #STOP_END_OF_HEAD
   bne .not_end_of_head
   print "ERR:DISK IS FULL"
-  jmp infin
+  jmp done
 .not_end_of_head:
   cmp #STOP_WRONG_HEADER
   bne .not_wrong_header
   print "ERR:DIFFERENT DISK"
-  jmp infin
+  jmp done
 .not_wrong_header:
   cmp #STOP_NOT_READY
   bne .not_not_ready
   print "ERR:NOT READY"
-  jmp infin
+  jmp done
 .not_not_ready:
   print "UNKNOWN ERROR"
-  jmp infin
+  jmp done
 
 ask_source_disk:
   lda FDS_DRIVE_STATUS
@@ -311,7 +330,9 @@ write_text:
 .loop:
   lda [COPY_SOURCE_ADDR], y
   bmi .end ; skip $80-$FF
-  tax 
+  sec
+  sbc #$20
+  tax
   lda .ascii, x
   sta PPUDATA
   iny
@@ -331,11 +352,6 @@ write_text:
   iny
   bne .loop_blank
 .ascii:
-  ; characters 0-31
-  .db $00, $00, $00, $00, $00, $00, $00, $00
-  .db $00, $00, $00, $00, $00, $00, $00, $00
-  .db $00, $00, $00, $00, $00, $00, $00, $00
-  .db $00, $00, $00, $00, $00, $00, $00, $00
   ; characters: <space>!"#$%&'
   .db $00, $01, $02, $03, $04, $05, $06, $07
   ; characters: ()*+,-./
@@ -399,6 +415,55 @@ IRQ_delay:
 .end:
   rti
 
+led_on:
+  ; light on
+  bit PPUSTATUS
+  lda #$3F
+  sta PPUADDR
+  lda #$13
+  sta PPUADDR
+  lda #$16
+  sta PPUDATA
+  bit PPUSTATUS
+  lda #0
+  sta PPUADDR
+  sta PPUADDR
+  rts
+
+led_off:
+  bit PPUSTATUS
+  lda #$3F
+  sta PPUADDR
+  lda #$13
+  sta PPUADDR
+  lda #$07
+  sta PPUDATA
+  bit PPUSTATUS
+  lda #0
+  sta PPUADDR
+  sta PPUADDR
+  rts
+
+animation:
+  bit PPUSTATUS  ; load A with value at location PPUSTATUS
+  bmi .vblank  ; if bit 7 is not set (not VBlank) keep checking
+  rts
+.vblank:
+  inc ANIMATION_STATE
+  lda ANIMATION_STATE
+  and #$07
+  cmp #$00
+  bne .step_1
+  jsr led_on
+  jmp .end
+.step_1:
+  cmp #$04
+  bne .end
+  jsr led_off
+.end:
+  jsr scroll_fix
+  rts
+
 NMI:
   ; reset to the main entry point
   lda #$35
@@ -407,13 +472,18 @@ NMI:
   sta $103
   jmp [$FFFC]
 
-nametable:
-;  .incbin "bg_name_table.bin"
-;  .org nametable + $3C0
-;  .incbin "bg_attr_table.bin"
 palette: 
   .incbin "palette0.bin"
   .incbin "palette1.bin"
   .incbin "palette2.bin"
   .incbin "palette3.bin"
+  .incbin "spalette0.bin"
   .include "disk.asm"
+
+sprites:
+  .db 88, $F0, %00000000, 223
+  .db 92, $F1, %00000000, 149 + 8*0
+  .db 92, $F1, %00000000, 149 + 8*1
+  .db 92, $F1, %00000000, 149 + 8*2
+
+sprites_end:

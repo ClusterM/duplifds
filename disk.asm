@@ -83,12 +83,12 @@ transfer:
   jmp .end
 .disk_inserted2:
   ; check for end of the disk
-  lda FDS_DISK_STATUS
-  and FDS_DISK_STATUS_END_OF_HEAD
-  beq .no_end_of_head
-  lda #STOP_END_OF_HEAD
-  sta <STOP_REASON
-  jmp .end
+  ;lda FDS_DISK_STATUS
+  ;and FDS_DISK_STATUS_END_OF_HEAD
+  ;beq .no_end_of_head
+  ;lda #STOP_END_OF_HEAD
+  ;sta <STOP_REASON
+  ;jmp .end
 .no_end_of_head:
   lda <STOP_REASON
   beq .next_block
@@ -96,6 +96,8 @@ transfer:
 .end:
   lda #(FDS_CONTROL_READ | FDS_CONTROL_MOTOR_OFF)
   sta FDS_CONTROL
+  jsr waitblank
+  jsr led_off
   rts
 
 read_block:
@@ -142,6 +144,7 @@ read_block:
   ; wait for data
 .wait_data
   ; TODO: timeout
+  jsr animation
   lda <STOP_REASON
   bne .end
   lda <CRC_RESULT
@@ -293,6 +296,7 @@ write_block:
   lda #(FDS_CONTROL_WRITE | FDS_CONTROL_MOTOR_ON | FDS_CONTROL_TRANSFER_ON | FDS_CONTROL_IRQ_ON)
   sta FDS_CONTROL
 .wait_write_end:
+  jsr animation
   lda <STOP_REASON
   bne .end
   lda WRITING_STATE
