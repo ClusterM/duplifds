@@ -124,7 +124,6 @@ read_block:
   lda <TEMP + 1
   sbc <BLOCK_SIZE + 1
   bcs .memory_ok
-  ;print_line "OUT OF MEMORY"
   lda #STOP_OUT_OF_MEMORY
   sta <STOP_REASON
   rts
@@ -372,7 +371,6 @@ IRQ_disk_write:
   ; writing CRC
   lda #$FF
   sta FDS_DATA_WRITE
-  ;lda #(FDS_CONTROL_WRITE | FDS_CONTROL_MOTOR_ON | FDS_CONTROL_TRANSFER_ON | FDS_CONTROL_IRQ_ON | FDS_CONTROL_CRC)
   lda #(FDS_CONTROL_WRITE | FDS_CONTROL_MOTOR_ON | FDS_CONTROL_TRANSFER_ON | FDS_CONTROL_CRC)
   sta FDS_CONTROL
   inc WRITING_STATE ; 3

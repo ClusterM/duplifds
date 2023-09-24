@@ -17,7 +17,7 @@
       "actual_disk_side": "A",
       "disk_type_other": "YellowDisk",
       "disk_version": "$00",
-      "file_amount": 4,
+      "file_amount": 6,
       "files": [
         {
           "file_number": "0",
@@ -31,12 +31,28 @@
           "file_number": "1",
           "file_indicate_code": "0",
           "file_name": "CHR",
-          "file_address": "$0200",
+          "file_address": "$0000",
           "file_kind": "Character",
-          "data": "ascii_pattern_table.bin"
+          "data": "bg_pattern_table.bin"
         },
         {
           "file_number": "2",
+          "file_indicate_code": "0",
+          "file_name": "BG_NT",
+          "file_address": "$2000",
+          "file_kind": "NameTable",
+          "data": "bg_nametable.bin"
+        },
+        {
+          "file_number": "3",
+          "file_indicate_code": "0",
+          "file_name": "BG_AT",
+          "file_address": "$23C0",
+          "file_kind": "NameTable",
+          "data": "bg_attr_table.bin"
+        },        
+        {
+          "file_number": "4",
           "file_indicate_code": "0",
           "file_name": "NOLICENS",
           "file_address": "$2000",
@@ -44,7 +60,7 @@
           "data": "no_license.prg"
         },
         {
-          "file_number": "3",
+          "file_number": "5",
           "file_indicate_code": "0",
           "file_name": "DUMMYDAT",
           "file_address": "$0200",
