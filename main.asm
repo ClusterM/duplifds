@@ -109,15 +109,21 @@ main:
   ldx <BLOCKS_READ
   jsr write_byte
   jsr next_line
-  print "RESULT CODE: "
-  ldx <STOP_REASON
-  jsr write_byte
-  jsr next_line
+  ;print "RESULT CODE: "
+  ;ldx <STOP_REASON
+  ;jsr write_byte
+  ;jsr next_line
 
   lda <STOP_REASON
   cmp #STOP_CRC_ERROR
   bne .not_crc_error
   ; it's ok if all visible files are read
+  lda <BLOCKS_READ
+  cmp #2
+  bcs .somethig_read
+  ; can't read anything
+  jmp print_error
+.somethig_read:
   lda <BLOCKS_READ
   cmp <BLOCK_AMOUNT
   bcs .not_crc_error_disk_done
@@ -144,7 +150,6 @@ main:
   jmp print_error
 .ok_lets_write:
 
-
   ;jsr waitblank
   ;jsr update_cursor
   ;lda #$00
@@ -157,20 +162,33 @@ main:
   lda #OPERATION_WRITING
   sta <OPERATION
   jsr transfer
-  print "RESULT CODE: "
-  ldx <STOP_REASON
-  jsr write_byte
-  jsr next_line
+  ;print "RESULT CODE: "
+  ;ldx <STOP_REASON
+  ;jsr write_byte
+  ;jsr next_line
   lda <STOP_REASON
   cmp #STOP_NONE
   beq .write_ok
   jmp print_error
 .write_ok:
   lda READ_FULL
-  bne .success
+  bne .copy_done
   jmp .copy_loop
+.copy_done:
 
-.success:
+  ; check it
+  print "CHECKING CRC..."
+  jsr transfer
+  ;print "RESULT CODE: "
+  ;ldx <STOP_REASON
+  ;jsr write_byte
+  ;jsr next_line
+  lda <STOP_REASON
+  cmp #STOP_NONE
+  beq .verify_ok
+  jmp print_error
+.verify_ok:
+
   print_line "DONE!"
 
   ; main loop        

@@ -44,7 +44,7 @@ transfer:
   ; ready! reading/writing block by block
   ; start reading
 .next_block
-  lda OPERATION
+  lda <OPERATION
   ; reading?
   bne .not_reading
   ; reading block
@@ -56,9 +56,9 @@ transfer:
   cmp #OPERATION_WRITING
   bne .not_writing
   ; writing
-  ; stop if BLOCKS_READ = BLOCKS_WRITTEN
+  ; stop if BLOCKS_READ = BLOCK_CURRENT
   lda <BLOCKS_READ
-  cmp <BLOCKS_WRITTEN
+  cmp <BLOCK_CURRENT
   beq .end
   ; write if BLOCK_CURRENT >= BLOCKS_WRITTEN
   ; dump reading otherwise
@@ -398,7 +398,6 @@ calculate_block_size:
   bne .file_header_block
   lda #2
   sta <BLOCK_SIZE
-  lda #2
   sta <BLOCK_TYPE_TEST
   sta <BLOCK_TYPE_ACT
   rts
