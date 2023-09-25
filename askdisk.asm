@@ -4,7 +4,7 @@ ask_source_disk:
   lda FDS_DRIVE_STATUS
   and #FDS_DRIVE_STATUS_DISK_NOT_INSERTED
   bne .wait_eject  
-  print_ptr str_eject_disk
+  printc_ptr str_eject_disk
 .wait_eject
   jsr eject_disk_animation
   lda FDS_DRIVE_STATUS
@@ -13,7 +13,7 @@ ask_source_disk:
   lda #0
   sta <ANIMATION_STATE
   jsr eject_disk_animation
-  print_ptr str_insert_source_disk
+  printc_ptr str_insert_source_disk
 .wait_insert
   jsr insert_disk_animation
   lda FDS_DRIVE_STATUS
@@ -22,7 +22,7 @@ ask_source_disk:
   lda #0
   sta <ANIMATION_STATE
   jsr insert_disk_animation
-  print_ptr str_reading
+  printc_ptr str_reading
   rts
 
 ask_target_disk:
@@ -31,7 +31,7 @@ ask_target_disk:
   lda FDS_DRIVE_STATUS
   and #FDS_DRIVE_STATUS_DISK_NOT_INSERTED
   bne .wait_eject  
-  print_ptr str_eject_disk
+  printc_ptr str_eject_disk
 .wait_eject
   jsr eject_disk_animation
   lda FDS_DRIVE_STATUS
@@ -40,7 +40,7 @@ ask_target_disk:
   lda #0
   sta <ANIMATION_STATE
   jsr eject_disk_animation
-  print_ptr str_insert_target_disk
+  printc_ptr str_insert_target_disk
 .wait_insert
   jsr insert_disk_animation
   lda FDS_DRIVE_STATUS
@@ -49,7 +49,7 @@ ask_target_disk:
   lda #0
   sta <ANIMATION_STATE
   jsr insert_disk_animation
-  print_ptr str_writing
+  printc_ptr str_writing
   rts
 
 eject_disk_animation:

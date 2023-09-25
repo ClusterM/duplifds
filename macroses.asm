@@ -1,24 +1,19 @@
-
-print .macro
-  .print_\@:
-  lda #LOW(.text\@)
-  sta <COPY_SOURCE_ADDR
-  lda #HIGH(.text\@)
-  sta <COPY_SOURCE_ADDR+1
-  jsr write_text
-  jmp .end_print\@
-  .text\@:
-  .db \1, $FF
-  .end_print\@:  
+PPU_to .macro
+  ; set PPU address to tile X, Y
+  bit PPUSTATUS
+  lda #($20 + \2 * 32 / $100)
+  sta PPUADDR
+  lda #($00 + ((\2 * 32) % $100) + \1)
+  sta PPUADDR
   .endm
 
-print_ptr .macro
+printc_ptr .macro
   .print_\@:
   lda #LOW(\1)
   sta <COPY_SOURCE_ADDR
   lda #HIGH(\1)
   sta <COPY_SOURCE_ADDR+1
-  jsr write_text
+  jsr printc
   .endm
 
 delay .macro

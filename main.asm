@@ -169,7 +169,7 @@ main:
 .copy_done:
 
   ; check it
-  print_ptr str_checking_crc
+  printc_ptr str_checking_crc
   jsr transfer
   lda <STOP_REASON
   cmp #STOP_NONE
@@ -177,7 +177,7 @@ main:
   jmp print_error
 .verify_ok:
 
-  print_ptr str_done
+  printc_ptr str_done
 
 done:
   lda FDS_DRIVE_STATUS
@@ -199,45 +199,45 @@ print_error:
   cmp #STOP_CRC_ERROR
   bne .not_crc
   ; TODO: print number of the block?
-  print_ptr str_err_crc_error
+  printc_ptr str_err_crc_error
   jmp done
 .not_crc:
   cmp #STOP_OUT_OF_MEMORY
   bne .not_out_of_memory
-  print_ptr str_err_out_of_memory
+  printc_ptr str_err_out_of_memory
   jmp done
 .not_out_of_memory:
   cmp #STOP_NO_DISK
   bne .not_no_disk
-  print_ptr str_err_no_disk
+  printc_ptr str_err_no_disk
   jmp done
 .not_no_disk:
   cmp #STOP_NO_POWER
   bne .not_no_power
-  print_ptr str_err_no_power
+  printc_ptr str_err_no_power
   jmp done
 .not_no_power:
   cmp #STOP_END_OF_HEAD
   bne .not_end_of_head
-  print_ptr str_err_end_of_head
+  printc_ptr str_err_end_of_head
   jmp done
 .not_end_of_head:
   cmp #STOP_WRONG_HEADER
   bne .not_wrong_header
-  print_ptr str_err_different_disk
+  printc_ptr str_err_different_disk
   jmp done
 .not_wrong_header:
   cmp #STOP_NOT_READY
   bne .not_not_ready
-  print_ptr str_err_not_ready
+  printc_ptr str_err_not_ready
   jmp done
 .not_not_ready:
   cmp #STOP_INVALID_BLOCK
   bne .not_invalid_block
-  print_ptr str_err_invalid_block
+  printc_ptr str_err_invalid_block
   jmp done
 .not_invalid_block:
-  print_ptr str_err_unknown
+  printc_ptr str_err_unknown
   jmp done
 
 waitblank:
@@ -260,14 +260,12 @@ scroll_fix:
   pla
   rts
 
-  ; write message
-write_text:
+  ; write message to the center line
+printc:
   jsr waitblank
-  bit PPUSTATUS
-  lda #$22
-  sta PPUADDR
-  lda #$26
-  sta PPUADDR
+  PPU_to 6, 17
+print:
+  ; jusr write message
   ldy #0
 .loop:
   lda [COPY_SOURCE_ADDR], y

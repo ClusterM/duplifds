@@ -24,10 +24,10 @@ str_err_no_disk:
 str_err_no_power:
   .db "ERR:NO POWER", $FF
 str_err_end_of_head:
-  print "ERR:DISK IS FULL"
+  .db "ERR:DISK IS FULL"
 str_err_different_disk:
-  print "ERR:DIFFERENT DISK"
+  .db "ERR:DIFFERENT DISK"
 str_err_not_ready:
-  print "ERR:NOT READY"
+  .db "ERR:NOT READY"
 str_err_unknown:
-  print "UNKNOWN ERROR"
+  .db "UNKNOWN ERROR"
