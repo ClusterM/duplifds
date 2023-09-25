@@ -12,6 +12,15 @@ print .macro
   .end_print\@:  
   .endm
 
+print_ptr .macro
+  .print_\@:
+  lda #LOW(\1)
+  sta <COPY_SOURCE_ADDR
+  lda #HIGH(\1)
+  sta <COPY_SOURCE_ADDR+1
+  jsr write_text
+  .endm
+
 delay .macro
   .delay_\@:
   lda #(\1 & $FF)

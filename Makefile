@@ -7,7 +7,7 @@ FAMICOM_DUMPER?=famicom-dumper
 OUTPUT_IMAGE?=duplifds.fds
 
 SOURCE=main.asm
-SOURCE_MORE=vars.asm fds_regs.asm macroses.asm disk.asm
+SOURCE_MORE=vars.asm fds_regs.asm macroses.asm disk.asm strings.asm
 EXECUTABLE=duplifds.prg
 
 BG_IMAGE=gui.png

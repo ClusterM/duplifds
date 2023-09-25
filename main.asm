@@ -167,7 +167,7 @@ main:
 .copy_done:
 
   ; check it
-  print "CHECKING CRC..."
+  print_ptr str_checking_crc
   jsr transfer
   lda <STOP_REASON
   cmp #STOP_NONE
@@ -175,7 +175,7 @@ main:
   jmp print_error
 .verify_ok:
 
-  print "DONE!"
+  print_ptr str_done
 
 done:
   lda FDS_DRIVE_STATUS
@@ -197,78 +197,132 @@ print_error:
   cmp #STOP_CRC_ERROR
   bne .not_crc
   ; TODO: print number of the block?
-  print "ERR:BAD BLOCK"
+  print_ptr str_err_crc_error
   jmp done
 .not_crc:
   cmp #STOP_OUT_OF_MEMORY
   bne .not_out_of_memory
-  print "ERR:OUT OF MEMORY"
+  print_ptr str_err_out_of_memory
   jmp done
 .not_out_of_memory:
   cmp #STOP_NO_DISK
   bne .not_no_disk
-  print "ERR:NO DISK"
+  print_ptr str_err_no_disk
   jmp done
 .not_no_disk:
   cmp #STOP_NO_POWER
   bne .not_no_power
-  print "ERR:NO POWER"
+  print_ptr str_err_no_power
   jmp done
 .not_no_power:
   cmp #STOP_END_OF_HEAD
   bne .not_end_of_head
-  print "ERR:DISK IS FULL"
+  print_ptr str_err_end_of_head
   jmp done
 .not_end_of_head:
   cmp #STOP_WRONG_HEADER
   bne .not_wrong_header
-  print "ERR:DIFFERENT DISK"
+  print_ptr str_err_different_disk
   jmp done
 .not_wrong_header:
   cmp #STOP_NOT_READY
   bne .not_not_ready
-  print "ERR:NOT READY"
+  print_ptr str_err_not_ready
   jmp done
 .not_not_ready:
-  print "UNKNOWN ERROR"
+  print_ptr str_err_unknown
   jmp done
 
+eject_disk_animation:
+  jsr waitblank
+  bit PPUSTATUS
+  lda #$3F
+  sta PPUADDR  
+  lda #$12
+  sta PPUADDR
+  inc <ANIMATION_STATE
+  lda <ANIMATION_STATE
+  and #%00010000
+  beq .normal
+  lda #$38
+  sta PPUDATA
+  rts
+.normal:
+  lda #$28
+  sta PPUDATA
+  rts
+
+insert_disk_animation:
+  jsr waitblank
+  bit PPUSTATUS
+  lda #$3F
+  sta PPUADDR  
+  lda #$07
+  sta PPUADDR
+  inc <ANIMATION_STATE
+  lda <ANIMATION_STATE
+  and #%00010000
+  beq .normal
+  lda #$38
+  sta PPUDATA
+  rts
+.normal:
+  lda #$28
+  sta PPUDATA
+  rts
+
 ask_source_disk:
-  ; TODO: animation
   ; TODO: button mode
+  ; TODO: sounds?
   lda FDS_DRIVE_STATUS
   and #FDS_DRIVE_STATUS_DISK_NOT_INSERTED
   bne .wait_eject  
-  print "EJECT DISK"
+  print_ptr str_eject_disk
 .wait_eject
+  jsr eject_disk_animation
   lda FDS_DRIVE_STATUS
   and #FDS_DRIVE_STATUS_DISK_NOT_INSERTED
-  beq .wait_eject  
-  print "INSERT SOURCE DISK"  
+  beq .wait_eject
+  lda #0
+  sta <ANIMATION_STATE
+  jsr eject_disk_animation
+  print_ptr str_insert_source_disk
 .wait_insert
+  jsr insert_disk_animation
   lda FDS_DRIVE_STATUS
   and #FDS_DRIVE_STATUS_DISK_NOT_INSERTED
   bne .wait_insert
-  print "READING..."
+  lda #0
+  sta <ANIMATION_STATE
+  jsr insert_disk_animation
+  print_ptr str_reading
   rts
 
 ask_target_disk:
-  ; TODO: animation
   ; TODO: button mode
+  ; TODO: sounds?
   lda FDS_DRIVE_STATUS
   and #FDS_DRIVE_STATUS_DISK_NOT_INSERTED
   bne .wait_eject  
-  print "EJECT DISK"
+  print_ptr str_eject_disk
 .wait_eject
+  jsr eject_disk_animation
   lda FDS_DRIVE_STATUS
   and #FDS_DRIVE_STATUS_DISK_NOT_INSERTED
-  beq .wait_eject  
-  print "INSERT TARGET DISK"  
+  beq .wait_eject
+  lda #0
+  sta <ANIMATION_STATE
+  jsr eject_disk_animation
+  print_ptr str_insert_target_disk
 .wait_insert
+  jsr insert_disk_animation
   lda FDS_DRIVE_STATUS
   and #FDS_DRIVE_STATUS_DISK_NOT_INSERTED
   bne .wait_insert
-  print "WRITING..."
+  lda #0
+  sta <ANIMATION_STATE
+  jsr insert_disk_animation
+  print_ptr str_writing
   rts
 
 waitblank:
@@ -282,6 +336,8 @@ waitblank:
 scroll_fix:
   ; fix scrolling
   pha
+  lda #%00000000
+  sta PPUCTRL
   bit PPUSTATUS
   lda #0
   sta PPUSCROLL
@@ -608,13 +664,15 @@ NMI:
   sta $103
   jmp [$FFFC]
 
+  .include "disk.asm"
+  .include "strings.asm"
+
 palette: 
   .incbin "palette0.bin"
   .incbin "palette1.bin"
   .incbin "palette2.bin"
   .incbin "palette3.bin"
   .incbin "spalette0.bin"
-  .include "disk.asm"
 
 ascii:
   ; characters: <space>!"#$%&'
