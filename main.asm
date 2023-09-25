@@ -121,9 +121,11 @@ main:
 
   lda <STOP_REASON
   cmp #STOP_CRC_ERROR
-  bne .not_crc_error
+  beq .crc_error
   cmp #STOP_INVALID_BLOCK
-  bne .not_crc_error
+  beq .crc_error
+  jmp .not_crc_error
+.crc_error
   ; it's ok if all visible files are read
   lda <BLOCKS_READ
   cmp #2

@@ -30,10 +30,7 @@ led_off:
 
 write_game_name:
   ; write game code and side
-  lda #$22
-  sta PPUADDR
-  lda #$6A
-  sta PPUADDR
+  PPU_to 10, 19
 game_name_byte_1:
   lda #$00
   sta PPUDATA
@@ -43,17 +40,11 @@ game_name_byte_2:
 game_name_byte_3:
   lda #$00
   sta PPUDATA
-  lda #$22
-  sta PPUADDR
-  lda #$75
-  sta PPUADDR
+  PPU_to 21, 19
 disk_number_byte:
   lda #$00
   sta PPUDATA
-  lda #$22
-  sta PPUADDR
-  lda #$77
-  sta PPUADDR
+  PPU_to 23, 19
 side_number_byte:
   lda #$00
   sta PPUDATA
@@ -110,40 +101,28 @@ precalculate_game_name:
 
 write_block_counters:
   ; write block counters
-  lda #$22
-  sta PPUADDR
-  lda #$A8
-  sta PPUADDR
+  PPU_to 8, 21
 blocks_read_byte_1:
   lda #$00
   sta PPUDATA
 blocks_read_byte_2:
   lda #$00
   sta PPUDATA
-  lda #$22
-  sta PPUADDR
-  lda #$AB
-  sta PPUADDR
+  PPU_to 11, 21
 blocks_total_byte_1:
   lda #$00
   sta PPUDATA
 blocks_total_byte_2:
   lda #$00
   sta PPUDATA
-  lda #$22
-  sta PPUADDR
-  lda #$B3
-  sta PPUADDR
+  PPU_to 19, 21
 blocks_written_byte_1:
   lda #$00
   sta PPUDATA
 blocks_written_byte_2:
   lda #$00
   sta PPUDATA
-  lda #$22
-  sta PPUADDR
-  lda #$B6
-  sta PPUADDR
+  PPU_to 22, 21
 blocks_total_byte_1b:
   lda #$00
   sta PPUDATA
