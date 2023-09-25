@@ -25,13 +25,20 @@ S_PRITES=sprites.png
 S_PATTERN=spr_pattern_table.bin
 S_PALETTE0=spalette0.bin
 
+INTERIM?=0
+COMMIT_FILE=commit.txt
+COMMIT_ARGS=
+ifneq ($(INTERIM),0)
+SOURCE_MORE += $(COMMIT_FILE)
+COMMIT_ARGS=--sequ COMMIT=$(COMMIT_FILE)
+endif
 
 all: $(OUTPUT_IMAGE)
 
 build: $(OUTPUT_IMAGE)
 
 $(EXECUTABLE): $(SOURCE) $(SOURCE_MORE) $(BG_PATTERN) $(PALETTE0) $(PALETTE1) $(PALETTE2) $(PALETTE3) $(BG_NAMETABLE) $(BG_ATTR_TABLE) $(S_PATTERN) $(S_PALETTE0)
-	$(NESASM) $(SOURCE) -o $(EXECUTABLE) --symbols=$(OUTPUT_IMAGE) -iWssr
+	$(NESASM) $(SOURCE) -o $(EXECUTABLE) $(COMMIT_ARGS) --symbols=$(OUTPUT_IMAGE) -iWssr
 
 $(OUTPUT_IMAGE): $(EXECUTABLE) diskinfo.json
 	$(FDSPACKER) pack diskinfo.json $(OUTPUT_IMAGE)
@@ -42,7 +49,7 @@ $(OUTPUT_IMAGE): $(EXECUTABLE) diskinfo.json
 	--palette-0 \#c4c4c4,\#008088,\#005000 \
 	--palette-1 \#c4c4c4,\#008088,\#f0bc3c \
 	--palette-2 \#c4c4c4,\#008088,\#fc7460 \
-	--palette-3 \#24188c,\#d82800,\#ffffff \
+	--palette-3 \#c4c4c4,\#d82800,\#ffffff \
 	--out-pattern-table $(BG_PATTERN) \
 	--out-palette-0 $(PALETTE0) \
 	--out-palette-1 $(PALETTE1) \
@@ -59,8 +66,11 @@ $(S_PATTERN) $(S_PALETTE0): $(S_PRITES)
 	--out-pattern-table $(S_PATTERN) \
 	--out-palette-0 $(S_PALETTE0)
 
+$(COMMIT_FILE):
+	git rev-parse --short HEAD | tr -d '\n' > $(COMMIT_FILE)
+
 clean:
-	rm -f $(EXECUTABLE) $(OUTPUT_IMAGE) *.lst *.nl *.bin 
+	rm -f $(EXECUTABLE) $(OUTPUT_IMAGE) *.lst *.nl *.bin $(COMMIT_FILE)
 
 run: $(OUTPUT_IMAGE)
 	$(EMU) $(OUTPUT_IMAGE)

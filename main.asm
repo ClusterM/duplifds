@@ -77,6 +77,13 @@ load_sprites:
   iny
   bne .blank_loop  
 
+  .ifdef COMMIT
+print_commit:
+  ; print interim commit hash
+  PPU_to 24, 28
+  print_ptr commit
+  .endif
+
   ; enable PPU
   bit PPUSTATUS
   lda #0
@@ -260,12 +267,10 @@ scroll_fix:
   pla
   rts
 
-  ; write message to the center line
 printc:
+  ; write message to the center line
   jsr waitblank
   PPU_to 6, 17
-print:
-  ; jusr write message
   ldy #0
 .loop:
   lda [COPY_SOURCE_ADDR], y
@@ -291,6 +296,22 @@ print:
   sta PPUDATA
   iny
   bne .loop_blank
+
+print:
+  ; just write message
+  ldy #0
+.loop:
+  lda [COPY_SOURCE_ADDR], y
+  bmi .end ; skip $80-$FF
+  sec
+  sbc #$20
+  tax
+  lda ascii, x
+  sta PPUDATA
+  iny
+  bne .loop
+.end:
+  rts
 
   ; delay for TIMER_COUNTER*1000 CPU cycles
 delay_sub:
@@ -383,3 +404,9 @@ sprites:
   .db 92, $F1, %00100000, 149 + 8*1
   .db 92, $F1, %00100000, 149 + 8*2 
 sprites_end:
+
+  .ifdef COMMIT
+commit:
+  .incbin COMMIT
+  .db $FF
+  .endif

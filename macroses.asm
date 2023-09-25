@@ -7,6 +7,15 @@ PPU_to .macro
   sta PPUADDR
   .endm
 
+print_ptr .macro
+  .print_\@:
+  lda #LOW(\1)
+  sta <COPY_SOURCE_ADDR
+  lda #HIGH(\1)
+  sta <COPY_SOURCE_ADDR+1
+  jsr print
+  .endm
+
 printc_ptr .macro
   .print_\@:
   lda #LOW(\1)
