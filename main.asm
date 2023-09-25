@@ -190,6 +190,7 @@ infin:
   jmp infin
 
 print_error:
+  ; TODO: error sound
   jsr waitblank
   jsr led_off
   lda <STOP_REASON
@@ -233,6 +234,8 @@ print_error:
   jmp done
 
 ask_source_disk:
+  ; TODO: animation
+  ; TODO: button mode
   lda FDS_DRIVE_STATUS
   and #FDS_DRIVE_STATUS_DISK_NOT_INSERTED
   bne .wait_eject  
@@ -250,6 +253,8 @@ ask_source_disk:
   rts
 
 ask_target_disk:
+  ; TODO: animation
+  ; TODO: button mode
   lda FDS_DRIVE_STATUS
   and #FDS_DRIVE_STATUS_DISK_NOT_INSERTED
   bne .wait_eject  
@@ -639,8 +644,8 @@ ascii:
 
 sprites:
   ; X, tile #, attributes, Y
-  .db 88, $F0, %00000000, 223
-  .db 92, $F1, %00000000, 149 + 8*0
-  .db 92, $F1, %00000000, 149 + 8*1
-  .db 92, $F1, %00000000, 149 + 8*2 
+  .db 88, $F0, %00100000, 223
+  .db 92, $F1, %00100000, 149 + 8*0
+  .db 92, $F1, %00100000, 149 + 8*1
+  .db 92, $F1, %00100000, 149 + 8*2 
 sprites_end:
