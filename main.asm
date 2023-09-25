@@ -22,20 +22,20 @@ Start:
   sta FDS_CONTROL
 
   ; clean memory
-;  lda #$00
-;  sta <COPY_SOURCE_ADDR
-;  lda #$02
-;  sta <COPY_SOURCE_ADDR + 1
-;  lda #$00
-;  ldy #$00
-;  ldx #$06
-;.loop:
-;  sta [COPY_SOURCE_ADDR], y
-;  iny
-;  bne .loop
-;  inc <COPY_SOURCE_ADDR+1
-;  dex
-;  bne .loop
+  lda #$00
+  sta <COPY_SOURCE_ADDR
+  lda #$02
+  sta <COPY_SOURCE_ADDR + 1
+  lda #$00
+  ldy #$00
+  ldx #$06
+.loop:
+  sta [COPY_SOURCE_ADDR], y
+  iny
+  bne .loop
+  inc <COPY_SOURCE_ADDR+1
+  dex
+  bne .loop
 
   ; use IRQ at $DFFE
   lda #$C0
@@ -77,31 +77,6 @@ load_sprites:
   iny
   bne .blank_loop  
 
-  ; loading blank nametable
-;clear_nametable:
-;  lda PPUSTATUS
-;  lda #$20
-;  sta PPUADDR
-;  lda #$00
-;  sta PPUADDR
-;  ldy #0
-;  ldx #0
-;  lda #$20
-;.loop:
-;  cpy #$C0
-;  bne .noat
-;  cpx #$03
-;  bne .noat
-;  lda #$00
-;.noat:
-;  sta PPUDATA
-;  iny
-;  bne .loop
-;  inx
-;  cpx #$04
-;  bne .loop
-;.end:
-
   ; enable PPU
   bit PPUSTATUS
   lda #0
@@ -120,20 +95,22 @@ main:
   sta <BLOCK_AMOUNT
   sta <FILE_AMOUNT
   sta <READ_FULL
+  jsr precalculate_game_name
+  jsr precalculate_block_counters
+  jsr waitblank
+  jsr led_off
+  jsr write_game_name
+  jsr write_block_counters
 
 .copy_loop
   jsr ask_source_disk
   lda #OPERATION_READING
   sta <OPERATION
   jsr transfer
-  ;print "BLOCKS: "
-  ldx <BLOCKS_READ
-  ;jsr write_byte
-  ;jsr next_line
-  ;print "RESULT CODE: "
-  ;ldx <STOP_REASON
-  ;jsr write_byte
-  ;jsr next_line
+  jsr waitblank
+  jsr led_off
+  jsr write_game_name
+  jsr write_block_counters
 
   lda <STOP_REASON
   cmp #STOP_CRC_ERROR
@@ -171,22 +148,14 @@ main:
   jmp print_error
 .ok_lets_write:
 
-  ;jsr waitblank
-  ;jsr update_cursor
-  ;lda #$00
-  ;sta <COPY_SOURCE_ADDR
-  ;lda #$60
-  ;sta <COPY_SOURCE_ADDR + 1
-  ;jsr hexdump
-  ;jsr next_line
   jsr ask_target_disk
   lda #OPERATION_WRITING
   sta <OPERATION
   jsr transfer
-  ;print "RESULT CODE: "
-  ;ldx <STOP_REASON
-  ;jsr write_byte
-  ;jsr next_line
+  jsr led_off
+  jsr write_game_name
+  jsr write_block_counters
+
   lda <STOP_REASON
   cmp #STOP_NONE
   beq .write_ok
@@ -200,10 +169,6 @@ main:
   ; check it
   print "CHECKING CRC..."
   jsr transfer
-  ;print "RESULT CODE: "
-  ;ldx <STOP_REASON
-  ;jsr write_byte
-  ;jsr next_line
   lda <STOP_REASON
   cmp #STOP_NONE
   beq .verify_ok
@@ -353,7 +318,7 @@ write_text:
   iny
   bne .loop_blank
 
-; delay for TIMER_COUNTER*1000 CPU cycles
+  ; delay for TIMER_COUNTER*1000 CPU cycles
 delay_sub:
   set_IRQ IRQ_delay
   lda #(1000 & $FF)
@@ -425,16 +390,182 @@ write_game_name:
   sta PPUADDR
   lda #$6A
   sta PPUADDR
-  lda #$01
+game_name_byte_1:
+  lda #$00
   sta PPUDATA
-  lda #$01
+game_name_byte_2:
+  lda #$00
   sta PPUDATA
-  lda #$01
+game_name_byte_3:
+  lda #$00
+  sta PPUDATA
+
+  lda #$22
+  sta PPUADDR
+  lda #$75
+  sta PPUADDR
+disk_number_byte:
+  lda #$00
+  sta PPUDATA
+
+  lda #$22
+  sta PPUADDR
+  lda #$77
+  sta PPUADDR
+side_number_byte:
+  lda #$00
   sta PPUDATA
   rts
 
-animation:
+precalculate_game_name:
+  lda <BLOCKS_READ
+  beq .no_header
+  ; 3-letter game code
+  lda HEADER_CACHE + $10
+  sec
+  sbc #$20
+  bmi .no_game_code
+  tax
+  lda ascii, x  
+  sta game_name_byte_1 + 1
+  lda HEADER_CACHE + $11
+  sec
+  sbc #$20
+  bmi .no_game_code
+  tax
+  lda ascii, x  
+  sta game_name_byte_2 + 1
+  lda HEADER_CACHE + $12
+  sec
+  sbc #$20
+  bmi .no_game_code
+  tax
+  lda ascii, x
+  sta game_name_byte_3 + 1
+.no_game_code:
+  ; disk number
+  lda HEADER_CACHE + $16
+  clc
+  adc #$11
+  sta disk_number_byte + 1
+  ; side number
+  lda HEADER_CACHE + $15
+  clc
+  adc #$21
+  sta side_number_byte + 1
   rts
+.no_header:
+  lda #0
+  sta game_name_byte_1 + 1
+  sta game_name_byte_2 + 1
+  sta game_name_byte_3 + 1
+  sta disk_number_byte + 1
+  sta side_number_byte + 1
+  rts
+
+write_block_counters:
+  lda #$22
+  sta PPUADDR
+  lda #$A8
+  sta PPUADDR
+blocks_read_byte_1:
+  lda #$00
+  sta PPUDATA
+blocks_read_byte_2:
+  lda #$00
+  sta PPUDATA
+  lda #$22
+  sta PPUADDR
+  lda #$AB
+  sta PPUADDR
+blocks_total_byte_1:
+  lda #$00
+  sta PPUDATA
+blocks_total_byte_2:
+  lda #$00
+  sta PPUDATA
+  lda #$22
+  sta PPUADDR
+  lda #$B3
+  sta PPUADDR
+blocks_written_byte_1:
+  lda #$00
+  sta PPUDATA
+blocks_written_byte_2:
+  lda #$00
+  sta PPUDATA
+  lda #$22
+  sta PPUADDR
+  lda #$B6
+  sta PPUADDR
+blocks_total_byte_1b:
+  lda #$00
+  sta PPUDATA
+blocks_total_byte_2b:
+  lda #$00
+  sta PPUDATA
+  rts
+
+divide10:
+  ; input: a - dividend 
+  ; output: a - remainder, x = quotient
+  ldx #0
+.div_loop:
+  cmp #10
+  bcc .done
+  sec
+  sbc #10
+  inx
+  jmp .div_loop
+.done:
+  rts
+
+precalculate_block_counters:
+  lda <BLOCK_AMOUNT
+  beq .no_blocks
+  lda BLOCKS_READ
+  jsr divide10
+  clc
+  adc #$10
+  sta blocks_read_byte_2 + 1
+  txa
+  clc
+  adc #$10
+  sta blocks_read_byte_1 + 1
+  lda BLOCKS_WRITTEN
+  jsr divide10
+  clc
+  adc #$10
+  sta blocks_written_byte_2 + 1
+  txa
+  clc
+  adc #$10
+  sta blocks_written_byte_1 + 1
+  lda BLOCK_AMOUNT
+  jsr divide10
+  clc
+  adc #$10
+  sta blocks_total_byte_2 + 1
+  sta blocks_total_byte_2b + 1
+  txa
+  clc
+  adc #$10
+  sta blocks_total_byte_1 + 1
+  sta blocks_total_byte_1b + 1
+  rts
+.no_blocks:
+  lda #0
+  sta blocks_read_byte_1 + 1
+  sta blocks_read_byte_2 + 1
+  sta blocks_written_byte_1 + 1
+  sta blocks_written_byte_2 + 1
+  sta blocks_total_byte_1 + 1
+  sta blocks_total_byte_2 + 1
+  sta blocks_total_byte_1b + 1
+  sta blocks_total_byte_2b + 1
+  rts
+
+animation:
   bit PPUSTATUS  ; load A with value at location PPUSTATUS
   bmi .vblank  ; if bit 7 is not set (not VBlank) keep checking
   rts
@@ -447,15 +578,19 @@ animation:
   jsr led_on
   jmp .end
 .step_1:
-  cmp #$04
-  bne .step_2
-  jsr led_off
-  jmp .end
-.step_2:
   cmp #$01
-  bne .end
+  bne .step_2
   jsr write_game_name
   jmp .end
+.step_2:
+  cmp #$02
+  bne .step_3
+  jsr write_block_counters
+  jmp .end
+.step_3
+  cmp #$04
+  bne .end
+  jsr led_off
 .end:
   jsr scroll_fix
   rts

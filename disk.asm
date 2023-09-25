@@ -153,6 +153,7 @@ read_block:
   lda #(FDS_CONTROL_READ | FDS_CONTROL_MOTOR_ON | FDS_CONTROL_TRANSFER_ON | FDS_CONTROL_IRQ_ON)
   sta FDS_CONTROL
   ; wait for data
+  bit PPUSTATUS
 .wait_data
   ; TODO: timeout
   jsr animation
@@ -168,20 +169,21 @@ read_block:
   inc <BLOCK_CURRENT
   lda <BLOCK_CURRENT
   cmp <BLOCKS_READ
-  bcc .skip_read_inc
+  bcc .end
   sta <BLOCKS_READ
-.skip_read_inc:
+  jsr precalculate_game_name
+  jsr precalculate_block_counters
 .end:
   rts
 
 IRQ_disk_read:
   pha
   ; store data
-  ldy #0
   lda FDS_DATA_READ
   ; skip blocks that already read
   ldx DUMMY_READ
   bne .dummy_reading
+  ldy #0
   sta [READ_OFFSET], y
 .dummy_reading:
   ; ack (is it required?)
@@ -239,21 +241,28 @@ IRQ_disk_read_CRC:
   lda FDS_DATA_READ
   lda #0
   sta FDS_DATA_WRITE
-  ; which state?
-  lda <CRC_STATE
-  bne .not_0
-  inc <CRC_STATE ; 1
+  set_IRQ IRQ_disk_read_CRC2
   ; enable CRC control
   lda #(FDS_CONTROL_READ | FDS_CONTROL_MOTOR_ON | FDS_CONTROL_TRANSFER_ON | FDS_CONTROL_IRQ_ON | FDS_CONTROL_CRC)
-  sta FDS_CONTROL
-  jmp .end
-.not_0
-  cmp #1
-  beq .check_crc
-  ; wtf ?
-  jmp .end
-.check_crc:
-  inc <CRC_STATE ; 2
+  sta FDS_CONTROL 
+  pla
+  rti
+
+IRQ_disk_read_CRC2:
+  pha
+  lda FDS_DATA_READ
+  lda #0
+  sta FDS_DATA_WRITE
+  set_IRQ IRQ_disk_read_CRC3
+  pla
+  rti
+
+IRQ_disk_read_CRC3:
+  pha
+  ; discard byte
+  lda FDS_DATA_READ
+  lda #0
+  sta FDS_DATA_WRITE
   ; CRC result
   lda FDS_DISK_STATUS
   and #FDS_DISK_STATUS_CRC_ERROR
@@ -273,59 +282,6 @@ IRQ_disk_read_CRC:
 .end:
   pla
   rti
-
-
-
-
-; IRQ_disk_read_CRC:
-;   pha
-;   ; discard byte
-;   lda FDS_DATA_READ
-;   lda #0
-;   sta FDS_DATA_WRITE
-;   set_IRQ IRQ_disk_read_CRC2
-;   ; enable CRC control
-;   lda #(FDS_CONTROL_READ | FDS_CONTROL_MOTOR_ON | FDS_CONTROL_TRANSFER_ON | FDS_CONTROL_IRQ_ON | FDS_CONTROL_CRC)
-;   sta FDS_CONTROL 
-;   pla
-;   rti
-; 
-; IRQ_disk_read_CRC2:
-;   pha
-;   lda FDS_DATA_READ
-;   lda #0
-;   sta FDS_DATA_WRITE
-;   set_IRQ IRQ_disk_read_CRC3
-;   pla
-;   rti
-; 
-; IRQ_disk_read_CRC3:
-;   pha
-;   ; discard byte
-;   lda FDS_DATA_READ
-;   lda #0
-;   sta FDS_DATA_WRITE
-;   ; CRC result
-;   lda FDS_DISK_STATUS
-;   and #FDS_DISK_STATUS_CRC_ERROR
-;   beq .CRC_ok
-;   ; CRC error :(
-;   lda #(FDS_CONTROL_READ | FDS_CONTROL_MOTOR_ON)
-;   sta FDS_CONTROL
-;   dec <CRC_RESULT
-;   lda #STOP_CRC_ERROR
-;   sta <STOP_REASON
-;   jmp .end
-; .CRC_ok:
-;   ; CRC ok!
-;   lda #(FDS_CONTROL_READ | FDS_CONTROL_MOTOR_ON)
-;   sta FDS_CONTROL
-;   inc <CRC_RESULT
-; .end:
-;   pla
-;   rti
-; 
-
 
 write_block:
   ; enable writing without transfer
@@ -354,6 +310,7 @@ write_block:
   ; start transfer, enable IRQ
   lda #(FDS_CONTROL_WRITE | FDS_CONTROL_MOTOR_ON | FDS_CONTROL_TRANSFER_ON | FDS_CONTROL_IRQ_ON)
   sta FDS_CONTROL
+  bit PPUSTATUS
 .wait_write_end:
   jsr animation
   lda <STOP_REASON
@@ -383,6 +340,7 @@ write_block:
   lda <STOP_REASON
   bne .end
   inc <BLOCKS_WRITTEN
+  jsr precalculate_block_counters
 .end:
   rts
 
@@ -405,7 +363,11 @@ IRQ_disk_write2:
   lda [READ_OFFSET], y
   sta FDS_DATA_WRITE
   ; TODO: copy protection bypass
+  ldx <BLOCK_TYPE_ACT
+  cpx #4
+  beq .skip_parse
   jsr parse_block
+.skip_parse:
   inc <READ_OFFSET
   bne .total_offset_end
   inc <READ_OFFSET + 1
@@ -486,8 +448,6 @@ calculate_block_size:
 parse_block:
   ; A - value
   ; X - offset
-  stx <TEMP_X
-  sty <TEMP_Y
   ldx <BLOCK_OFFSET
   ; Y - block type
   ldy <BLOCK_TYPE_ACT
@@ -500,15 +460,15 @@ parse_block:
   bne .compare_header
   ; store header in the permanent area
   sta <HEADER_CACHE, x
-  jmp .end
+  rts
 .compare_header:
   cmp <HEADER_CACHE, x  
   bne .wrong_header  
-  jmp .end
+  rts
 .wrong_header:
   lda #STOP_WRONG_HEADER
   sta STOP_REASON
-  jmp .end
+  rts
 .not_header:
   ; file amount block?
   cpy #2
@@ -521,20 +481,16 @@ parse_block:
   adc <FILE_AMOUNT
   adc #2
   sta <BLOCK_AMOUNT
-  jmp .end
+  rts
 .not_file_amount:
   ; file header block?  
-  cpy #3
-  bne .end
   cpx #$0D
   bne .not_low_size
   sta NEXT_FILE_SIZE
-  jmp .end
+  rts
 .not_low_size:
   cpx #$0E
   bne .end
   sta NEXT_FILE_SIZE + 1
 .end:
-  ldx <TEMP_X
-  ldy <TEMP_Y
   rts  
