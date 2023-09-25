@@ -230,6 +230,7 @@ print_error:
   lda <STOP_REASON
   cmp #STOP_CRC_ERROR
   bne .not_crc
+  ; TODO: print number of the block?
   print "ERR:BAD BLOCK"
   jmp done
 .not_crc:
@@ -333,7 +334,7 @@ write_text:
   sec
   sbc #$20
   tax
-  lda .ascii, x
+  lda ascii, x
   sta PPUDATA
   iny
   cpy #18
@@ -351,31 +352,6 @@ write_text:
   sta PPUDATA
   iny
   bne .loop_blank
-.ascii:
-  ; characters: <space>!"#$%&'
-  .db $00, $01, $02, $03, $04, $05, $06, $07
-  ; characters: ()*+,-./
-  .db $08, $09, $0A, $0B, $0C, $0D, $0E, $0F
-  ; characters: 01234567
-  .db $10, $11, $12, $13, $14, $15, $16, $17
-  ; characters: 89:;<=>?
-  .db $18, $19, $1A, $1B, $1C, $1D, $1E, $1F
-  ; characters: @ABCDEFG
-  .db $20, $21, $22, $23, $24, $25, $26, $27
-  ; characters: HIJKLMNO
-  .db $28, $29, $2A, $2B, $2C, $2D, $2E, $10
-  ; characters: PQRSTUVW
-  .db $2F, $30, $31, $32, $33, $34, $35, $36
-  ; characters: XYZ[\]^_
-  .db $37, $38, $39, $3A, $3B, $3C, $3D, $3E
-  ; characters: 'abcdefg
-  .db $3F, $21, $22, $23, $24, $25, $26, $27
-  ; characters: hijklmno
-  .db $28, $29, $2A, $2B, $2C, $2D, $2E, $10
-  ; characters: pqrstuvw
-  .db $2F, $30, $31, $32, $33, $34, $35, $36
-  ; characters: xyz{|}~
-  .db $37, $38, $39, $40, $41, $42, $43, $00
 
 ; delay for TIMER_COUNTER*1000 CPU cycles
 delay_sub:
@@ -444,13 +420,27 @@ led_off:
   sta PPUADDR
   rts
 
+write_game_name:
+  lda #$22
+  sta PPUADDR
+  lda #$6A
+  sta PPUADDR
+  lda #$01
+  sta PPUDATA
+  lda #$01
+  sta PPUDATA
+  lda #$01
+  sta PPUDATA
+  rts
+
 animation:
+  rts
   bit PPUSTATUS  ; load A with value at location PPUSTATUS
   bmi .vblank  ; if bit 7 is not set (not VBlank) keep checking
   rts
 .vblank:
-  inc ANIMATION_STATE
-  lda ANIMATION_STATE
+  inc <ANIMATION_STATE
+  lda <ANIMATION_STATE
   and #$07
   cmp #$00
   bne .step_1
@@ -458,8 +448,14 @@ animation:
   jmp .end
 .step_1:
   cmp #$04
-  bne .end
+  bne .step_2
   jsr led_off
+  jmp .end
+.step_2:
+  cmp #$01
+  bne .end
+  jsr write_game_name
+  jmp .end
 .end:
   jsr scroll_fix
   rts
@@ -480,10 +476,36 @@ palette:
   .incbin "spalette0.bin"
   .include "disk.asm"
 
+ascii:
+  ; characters: <space>!"#$%&'
+  .db $00, $01, $02, $03, $04, $05, $06, $07
+  ; characters: ()*+,-./
+  .db $08, $09, $0A, $0B, $0C, $0D, $0E, $0F
+  ; characters: 01234567
+  .db $10, $11, $12, $13, $14, $15, $16, $17
+  ; characters: 89:;<=>?
+  .db $18, $19, $1A, $1B, $1C, $1D, $1E, $1F
+  ; characters: @ABCDEFG
+  .db $20, $21, $22, $23, $24, $25, $26, $27
+  ; characters: HIJKLMNO
+  .db $28, $29, $2A, $2B, $2C, $2D, $2E, $10
+  ; characters: PQRSTUVW
+  .db $2F, $30, $31, $32, $33, $34, $35, $36
+  ; characters: XYZ[\]^_
+  .db $37, $38, $39, $3A, $3B, $3C, $3D, $3E
+  ; characters: 'abcdefg
+  .db $3F, $21, $22, $23, $24, $25, $26, $27
+  ; characters: hijklmno
+  .db $28, $29, $2A, $2B, $2C, $2D, $2E, $10
+  ; characters: pqrstuvw
+  .db $2F, $30, $31, $32, $33, $34, $35, $36
+  ; characters: xyz{|}~
+  .db $37, $38, $39, $40, $41, $42, $43, $00
+
 sprites:
+  ; X, tile #, attributes, Y
   .db 88, $F0, %00000000, 223
   .db 92, $F1, %00000000, 149 + 8*0
   .db 92, $F1, %00000000, 149 + 8*1
-  .db 92, $F1, %00000000, 149 + 8*2
-
+  .db 92, $F1, %00000000, 149 + 8*2 
 sprites_end:

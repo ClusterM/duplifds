@@ -2,12 +2,13 @@
   .rsset $0010
 COPY_SOURCE_ADDR .rs 2  ; address storage for copy operations
 TEMP             .rs 2  ; just temporary memory
+TEMP_X           .rs 1  ; temporary variable for X
+TEMP_Y           .rs 1  ; temporary variable for Y
 TIMER_COUNTER    .rs 2  ; timer counter (1 for 1000 ticks)
 CURSOR           .rs 2  ; for debugging
 BLOCK_CURRENT    .rs 1  ; number of the current block
 BLOCK_TYPE_TEST  .rs 1  ; type that _should_ be for the current block
 BLOCK_TYPE_ACT   .rs 1  ; type the current block
-;BYTES_LEFT       .rs 2  ; bytes left of the current block
 BLOCK_SIZE       .rs 2  ; current block size
 BLOCK_OFFSET     .rs 2  ; current block offset
 READ_OFFSET      .rs 2  ; current read/write position in memory
@@ -20,7 +21,8 @@ OPERATION        .rs 1  ; current operation code: 0 - reading, 1 - writing, 2 - 
 STOP_REASON      .rs 1  ; read/write stop reason
 BLOCKS_READ      .rs 1  ; amount of blocks read
 BLOCKS_WRITTEN   .rs 1  ; amount of blocks written
-WRITING_STATE    .rs 1  ; current state of writing
+DUMMY_READ       .rs 1
+WRITING_DONE    .rs 1  ; current state of writing
 READ_FULL        .rs 1  ; non-zero when source disk reading fully completed
 ANIMATION_STATE  .rs 1  ; animation state
 HEADER_CACHE     .rs 56 ; cached disk header

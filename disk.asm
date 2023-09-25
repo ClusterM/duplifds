@@ -83,6 +83,7 @@ transfer:
   jmp .end
 .disk_inserted2:
   ; check for end of the disk
+  ; not stable for some reason :(
   ;lda FDS_DISK_STATUS
   ;and FDS_DISK_STATUS_END_OF_HEAD
   ;beq .no_end_of_head
@@ -130,6 +131,16 @@ read_block:
   sta <STOP_REASON
   rts
 .memory_ok
+
+  ; determine read type and skip blocks that already read
+  lda #1
+  ldx <BLOCK_CURRENT
+  cpx <BLOCKS_READ
+  bcc .dummy_reading
+  lda #0
+.dummy_reading:  
+  sta DUMMY_READ
+
   ; reset variables
   lda #0
   sta <BLOCK_OFFSET
@@ -169,9 +180,8 @@ IRQ_disk_read:
   ldy #0
   lda FDS_DATA_READ
   ; skip blocks that already read
-  ldx <BLOCK_CURRENT
-  cpx <BLOCKS_READ
-  bcc .dummy_reading
+  ldx DUMMY_READ
+  bne .dummy_reading
   sta [READ_OFFSET], y
 .dummy_reading:
   ; ack (is it required?)
@@ -186,8 +196,7 @@ IRQ_disk_read:
   dec <CRC_RESULT
   lda #STOP_CRC_ERROR
   sta <STOP_REASON
-  pla
-  rti
+  jmp .end
 .type_check_no:
   ; do not check again, first byte only
   ldx #0
@@ -201,9 +210,8 @@ IRQ_disk_read:
   jsr parse_block
 .skip_parse:
   ; increase address offset if reading new data
-  lda <BLOCK_CURRENT
-  cmp <BLOCKS_READ
-  bcc .skip_inc_total_offset
+  ldx DUMMY_READ
+  bne .skip_inc_total_offset
   inc <READ_OFFSET
   bne .skip_inc_total_offset
   inc <READ_OFFSET + 1
@@ -238,14 +246,12 @@ IRQ_disk_read_CRC:
   ; enable CRC control
   lda #(FDS_CONTROL_READ | FDS_CONTROL_MOTOR_ON | FDS_CONTROL_TRANSFER_ON | FDS_CONTROL_IRQ_ON | FDS_CONTROL_CRC)
   sta FDS_CONTROL
-  pla
-  rti
+  jmp .end
 .not_0
   cmp #1
   beq .check_crc
   ; wtf ?
-  pla
-  rti
+  jmp .end
 .check_crc:
   inc <CRC_STATE ; 2
   ; CRC result
@@ -258,15 +264,68 @@ IRQ_disk_read_CRC:
   dec <CRC_RESULT
   lda #STOP_CRC_ERROR
   sta <STOP_REASON
-  pla
-  rti
+  jmp .end
 .CRC_ok:
   ; CRC ok!
   lda #(FDS_CONTROL_READ | FDS_CONTROL_MOTOR_ON)
   sta FDS_CONTROL
   inc <CRC_RESULT
+.end:
   pla
   rti
+
+
+
+
+; IRQ_disk_read_CRC:
+;   pha
+;   ; discard byte
+;   lda FDS_DATA_READ
+;   lda #0
+;   sta FDS_DATA_WRITE
+;   set_IRQ IRQ_disk_read_CRC2
+;   ; enable CRC control
+;   lda #(FDS_CONTROL_READ | FDS_CONTROL_MOTOR_ON | FDS_CONTROL_TRANSFER_ON | FDS_CONTROL_IRQ_ON | FDS_CONTROL_CRC)
+;   sta FDS_CONTROL 
+;   pla
+;   rti
+; 
+; IRQ_disk_read_CRC2:
+;   pha
+;   lda FDS_DATA_READ
+;   lda #0
+;   sta FDS_DATA_WRITE
+;   set_IRQ IRQ_disk_read_CRC3
+;   pla
+;   rti
+; 
+; IRQ_disk_read_CRC3:
+;   pha
+;   ; discard byte
+;   lda FDS_DATA_READ
+;   lda #0
+;   sta FDS_DATA_WRITE
+;   ; CRC result
+;   lda FDS_DISK_STATUS
+;   and #FDS_DISK_STATUS_CRC_ERROR
+;   beq .CRC_ok
+;   ; CRC error :(
+;   lda #(FDS_CONTROL_READ | FDS_CONTROL_MOTOR_ON)
+;   sta FDS_CONTROL
+;   dec <CRC_RESULT
+;   lda #STOP_CRC_ERROR
+;   sta <STOP_REASON
+;   jmp .end
+; .CRC_ok:
+;   ; CRC ok!
+;   lda #(FDS_CONTROL_READ | FDS_CONTROL_MOTOR_ON)
+;   sta FDS_CONTROL
+;   inc <CRC_RESULT
+; .end:
+;   pla
+;   rti
+; 
+
 
 write_block:
   ; enable writing without transfer
@@ -287,7 +346,7 @@ write_block:
   sta FDS_DATA_WRITE
   ; reset variables
   lda #0
-  sta <WRITING_STATE
+  sta <WRITING_DONE
   sta <BLOCK_OFFSET
   sta <BLOCK_OFFSET + 1
   ; set IRQ vector
@@ -299,9 +358,8 @@ write_block:
   jsr animation
   lda <STOP_REASON
   bne .end
-  lda WRITING_STATE
-  cmp #3
-  bne .wait_write_end
+  lda <WRITING_DONE
+  beq .wait_write_end
   ; wait while CRC is writing
   ldx #$B2
 .write_CRC_wait:
@@ -332,24 +390,22 @@ IRQ_disk_write:
   pha
   ; discard input byte
   lda FDS_DATA_READ
-  lda <WRITING_STATE
-  bne .not_writing_start_bit
-  ; need to write start bit
+  lda <WRITING_DONE
   lda #$80
   sta FDS_DATA_WRITE
-  inc <WRITING_STATE ; 1
+  set_IRQ IRQ_disk_write2 
   pla
   rti
-.not_writing_start_bit:
-  cmp #1
-  bne .not_writina_data
-  ; write actual data
+
+IRQ_disk_write2:
+  pha
+  ; discard input byte
+  lda FDS_DATA_READ
   ldy #0
   lda [READ_OFFSET], y
   sta FDS_DATA_WRITE
   ; TODO: copy protection bypass
   jsr parse_block
-  ; increase address offset if reading
   inc <READ_OFFSET
   bne .total_offset_end
   inc <READ_OFFSET + 1
@@ -366,18 +422,20 @@ IRQ_disk_write:
   cmp <BLOCK_SIZE + 1
   bne .end
   ; end of data
-  inc <WRITING_STATE ; 2
-  pla 
+  set_IRQ IRQ_disk_write3
+.end:
+  pla
   rti
-.not_writina_data:  
-  cmp #2
-  bne .end
-  ; writing CRC
+
+IRQ_disk_write3:
+  pha
+  ; discard input byte
+  lda FDS_DATA_READ
   lda #$FF
   sta FDS_DATA_WRITE
   lda #(FDS_CONTROL_WRITE | FDS_CONTROL_MOTOR_ON | FDS_CONTROL_TRANSFER_ON | FDS_CONTROL_CRC)
   sta FDS_CONTROL
-  inc WRITING_STATE ; 3
+  inc <WRITING_DONE
 .end:
   pla
   rti
@@ -428,6 +486,8 @@ calculate_block_size:
 parse_block:
   ; A - value
   ; X - offset
+  stx <TEMP_X
+  sty <TEMP_Y
   ldx <BLOCK_OFFSET
   ; Y - block type
   ldy <BLOCK_TYPE_ACT
@@ -440,15 +500,15 @@ parse_block:
   bne .compare_header
   ; store header in the permanent area
   sta <HEADER_CACHE, x
-  rts
+  jmp .end
 .compare_header:
   cmp <HEADER_CACHE, x  
   bne .wrong_header  
-  rts
+  jmp .end
 .wrong_header:
   lda #STOP_WRONG_HEADER
   sta STOP_REASON
-  rts
+  jmp .end
 .not_header:
   ; file amount block?
   cpy #2
@@ -461,7 +521,7 @@ parse_block:
   adc <FILE_AMOUNT
   adc #2
   sta <BLOCK_AMOUNT
-  rts
+  jmp .end
 .not_file_amount:
   ; file header block?  
   cpy #3
@@ -469,10 +529,12 @@ parse_block:
   cpx #$0D
   bne .not_low_size
   sta NEXT_FILE_SIZE
-  rts
+  jmp .end
 .not_low_size:
   cpx #$0E
   bne .end
   sta NEXT_FILE_SIZE + 1
 .end:
+  ldx <TEMP_X
+  ldy <TEMP_Y
   rts  
