@@ -195,8 +195,7 @@ IRQ_disk_read:
   cmp <BLOCK_TYPE_TEST
   beq .type_check_no
   ; invalid block
-  dec <CRC_RESULT
-  lda #STOP_CRC_ERROR
+  lda #STOP_INVALID_BLOCK
   sta <STOP_REASON
   jmp .end
 .type_check_no:
@@ -362,7 +361,6 @@ IRQ_disk_write2:
   ldy #0
   lda [READ_OFFSET], y
   sta FDS_DATA_WRITE
-  ; TODO: copy protection bypass
   ldx <BLOCK_TYPE_ACT
   cpx #4
   beq .skip_parse

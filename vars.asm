@@ -22,8 +22,8 @@ STOP_REASON      .rs 1  ; read/write stop reason
 BLOCKS_READ      .rs 1  ; amount of blocks read
 BLOCKS_WRITTEN   .rs 1  ; amount of blocks written
 DUMMY_READ       .rs 1
-WRITING_DONE    .rs 1  ; current state of writing
-READ_FULL        .rs 1  ; non-zero when source disk reading fully completed
+WRITING_DONE     .rs 1  ; current state of writing
+READ_FULL        .rs 1  ; non-zero when source disk reading is fully completed
 ANIMATION_STATE  .rs 1  ; animation state
 HEADER_CACHE     .rs 56 ; cached disk header
 
@@ -35,6 +35,7 @@ STOP_NO_POWER        .equ 4
 STOP_END_OF_HEAD     .equ 5
 STOP_WRONG_HEADER    .equ 6
 STOP_NOT_READY       .equ 7
+STOP_INVALID_BLOCK   .equ 8
 
 OPERATION_READING    .equ 0
 OPERATION_WRITING    .equ 1

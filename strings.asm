@@ -14,7 +14,9 @@ str_done:
   .db "SUCCESS! @", $FF
 
 str_err_crc_error:
-  .db "ERR:BAD BLOCK", $FF
+  .db "ERR:CRC MISMATCH", $FF
+str_err_invalid_block:
+  .db "ERR:INVALID BLOCK", $FF
 str_err_out_of_memory:
   .db "ERR:OUT OF MEMORY", $FF
 str_err_no_disk:
@@ -22,7 +24,7 @@ str_err_no_disk:
 str_err_no_power:
   .db "ERR:NO POWER", $FF
 str_err_end_of_head:
-  print "ERxR:DISK IS FULL"
+  print "ERR:DISK IS FULL"
 str_err_different_disk:
   print "ERR:DIFFERENT DISK"
 str_err_not_ready:
