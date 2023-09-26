@@ -42,8 +42,7 @@ transfer:
   and #FDS_DRIVE_STATUS_DISK_NOT_READY
   bne .not_ready_yet
   ; ready! reading/writing block by block
-  ; start reading
-.next_block
+.next_block:
   lda <OPERATION
   ; reading?
   bne .not_reading
@@ -54,7 +53,7 @@ transfer:
 .not_reading:
   ; writing?
   cmp #OPERATION_WRITING
-  bne .not_writing
+  bne .block_end
   ; writing
   ; stop if BLOCKS_READ = BLOCK_CURRENT
   lda <BLOCKS_READ
@@ -71,8 +70,7 @@ transfer:
   ; block already written, reading without storing
   jsr read_block
   jmp .block_end
-.not_writing:
-.block_end
+.block_end:
   ; check if disk removed
   lda FDS_DRIVE_STATUS
   and #FDS_DRIVE_STATUS_DISK_NOT_INSERTED

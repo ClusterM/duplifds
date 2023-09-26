@@ -1,5 +1,5 @@
 ask_disk:
-  ; TODO: sounds?
+  jsr bleep
   ; skip .wait_eject if the disk already ejected
   lda FDS_DRIVE_STATUS
   and #FDS_DRIVE_STATUS_DISK_NOT_INSERTED

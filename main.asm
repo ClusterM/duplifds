@@ -78,10 +78,10 @@ print_commit:
   lda #%00011110
   sta PPUMASK  
 
-  cli ; enable interrupts
-
   lda #0
   sta MANUAL_MODE
+
+  cli ; enable interrupts
 
 main:
   lda #0
@@ -176,6 +176,7 @@ main:
   jmp print_error
 .verify_ok:
 
+  jsr start_sound_alt
   printc_ptr str_done
 
 done:
@@ -244,7 +245,7 @@ print_error:
   printc_ptr str_err_unknown
   jmp .done
 .done:
-  ; TODO: sound
+  jsr error_sound
 .loop:
   ; wait for any button
   jsr waitblank
@@ -254,6 +255,11 @@ print_error:
   jmp main
 
 waitblank:
+  pha
+  txa
+  pha
+  tya
+  pha
   jsr ReadOrDownPads
   ; enable manual mode if select pressed
   lda JOY1_HOLD
@@ -272,6 +278,11 @@ waitblank:
 .loop:
   bit PPUSTATUS  ; load A with value at location PPUSTATUS
   bpl .loop  ; if bit 7 is not set (not VBlank) keep checking
+  pla
+  tay
+  pla
+  tax
+  pla
   rts
 
 scroll_fix:
@@ -383,6 +394,7 @@ NMI:
   .include "strings.asm"
   .include "animation.asm"
   .include "askdisk.asm"
+  .include "sounds.asm"
 
 palette: 
   .incbin "palette0.bin"
