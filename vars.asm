@@ -25,6 +25,7 @@ DUMMY_READ       .rs 1
 WRITING_DONE     .rs 1  ; current state of writing
 READ_FULL        .rs 1  ; non-zero when source disk reading is fully completed
 ANIMATION_STATE  .rs 1  ; animation state
+MANUAL_MODE      .rs 1  ; flag that manual disk insert mode enabled
 HEADER_CACHE     .rs 56 ; cached disk header
 
 STOP_NONE            .equ 0

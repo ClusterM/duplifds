@@ -25,6 +25,15 @@ printc_ptr .macro
   jsr printc
   .endm
 
+printc_ptr_no_vblank .macro
+  .print_\@:
+  lda #LOW(\1)
+  sta <COPY_SOURCE_ADDR
+  lda #HIGH(\1)
+  sta <COPY_SOURCE_ADDR+1
+  jsr printc_no_vlank
+  .endm
+
 delay .macro
   .delay_\@:
   lda #(\1 & $FF)

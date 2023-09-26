@@ -12,6 +12,8 @@ str_checking_crc:
   .db "CHECKING CRC...", $FF
 str_done:
   .db "SUCCESS! @", $FF
+str_and_press_start:
+  .db "AND PRESS START", $FF
 
 str_err_crc_error:
   .db "ERR:CRC MISMATCH", $FF

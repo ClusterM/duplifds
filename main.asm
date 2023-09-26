@@ -18,24 +18,9 @@ Start:
   jsr waitblank
   jsr waitblank 
 
+  ; stop motor
   lda #(FDS_CONTROL_READ | FDS_CONTROL_MOTOR_OFF)
   sta FDS_CONTROL
-
-  ; clean memory
-  lda #$00
-  sta <COPY_SOURCE_ADDR
-  lda #$02
-  sta <COPY_SOURCE_ADDR + 1
-  lda #$00
-  ldy #$00
-  ldx #$06
-.loop:
-  sta [COPY_SOURCE_ADDR], y
-  iny
-  bne .loop
-  inc <COPY_SOURCE_ADDR+1
-  dex
-  bne .loop
 
   ; use IRQ at $DFFE
   lda #$C0
@@ -95,6 +80,9 @@ print_commit:
 
   cli ; enable interrupts
 
+  lda #0
+  sta MANUAL_MODE
+
 main:
   lda #0
   sta <BLOCKS_READ
@@ -110,9 +98,10 @@ main:
   jsr write_block_counters
 
 .copy_loop
-  jsr ask_source_disk
   lda #OPERATION_READING
   sta <OPERATION
+  jsr ask_disk
+  printc_ptr str_reading
   jsr transfer
   jsr waitblank
   jsr led_off
@@ -159,9 +148,10 @@ main:
   jmp print_error
 .ok_lets_write:
 
-  jsr ask_target_disk
   lda #OPERATION_WRITING
   sta <OPERATION
+  jsr ask_disk
+  printc_ptr str_writing
   jsr transfer
   jsr led_off
   jsr write_game_name
@@ -189,9 +179,14 @@ main:
   printc_ptr str_done
 
 done:
+  jsr waitblank
+  lda JOY1_HOLD
+  ora JOY2_HOLD
+  bne .end
   lda FDS_DRIVE_STATUS
   and #FDS_DRIVE_STATUS_DISK_NOT_INSERTED
   beq done
+.end:
   jmp main
 
   ; main loop        
@@ -209,47 +204,69 @@ print_error:
   bne .not_crc
   ; TODO: print number of the block?
   printc_ptr str_err_crc_error
-  jmp done
+  jmp .done
 .not_crc:
   cmp #STOP_OUT_OF_MEMORY
   bne .not_out_of_memory
   printc_ptr str_err_out_of_memory
-  jmp done
+  jmp .done
 .not_out_of_memory:
   cmp #STOP_NO_DISK
   bne .not_no_disk
   printc_ptr str_err_no_disk
-  jmp done
+  jmp .done
 .not_no_disk:
   cmp #STOP_NO_POWER
   bne .not_no_power
   printc_ptr str_err_no_power
-  jmp done
+  jmp .done
 .not_no_power:
   cmp #STOP_END_OF_HEAD
   bne .not_end_of_head
   printc_ptr str_err_end_of_head
-  jmp done
+  jmp .done
 .not_end_of_head:
   cmp #STOP_WRONG_HEADER
   bne .not_wrong_header
   printc_ptr str_err_different_disk
-  jmp done
+  jmp .done
 .not_wrong_header:
   cmp #STOP_NOT_READY
   bne .not_not_ready
   printc_ptr str_err_not_ready
-  jmp done
+  jmp .done
 .not_not_ready:
   cmp #STOP_INVALID_BLOCK
   bne .not_invalid_block
   printc_ptr str_err_invalid_block
-  jmp done
+  jmp .done
 .not_invalid_block:
   printc_ptr str_err_unknown
-  jmp done
+  jmp .done
+.done:
+  ; TODO: sound
+.loop:
+  ; wait for any button
+  jsr waitblank
+  lda JOY1_HOLD
+  ora JOY2_HOLD
+  beq .loop
+  jmp main
 
 waitblank:
+  jsr ReadOrDownPads
+  ; enable manual mode if select pressed
+  lda JOY1_HOLD
+  ora JOY2_HOLD
+  and #BTN_SELECT
+  beq .no_manual
+  ; already manual mode?
+  lda MANUAL_MODE
+  bne .no_manual
+  lda #1
+  sta MANUAL_MODE
+  ; TODO: sound
+.no_manual:
   jsr scroll_fix
   bit PPUSTATUS
 .loop:
@@ -272,6 +289,7 @@ scroll_fix:
 printc:
   ; write message to the center line
   jsr waitblank
+printc_no_vlank:
   PPU_to 6, 17
   ldy #0
 .loop:

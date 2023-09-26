@@ -53,10 +53,10 @@ JOY2_NEWPRESS    .rs 1
 JOY1_HOLD        .rs 1
 JOY2_HOLD        .rs 1
   .rsset $00FC
-MIRR_SCROLL_X         .rs 1
-MIRR_SCROLL_Y         .rs 1
-MIRR_PPU_MASK  .rs 1
-MIRR_PPU_CTRL  .rs 1
+MIRR_SCROLL_X    .rs 1
+MIRR_SCROLL_Y    .rs 1
+MIRR_PPU_MASK    .rs 1
+MIRR_PPU_CTRL    .rs 1
   .rsset $0100
 NMI_ACTION       .rs 1
 IRQ_ACTION       .rs 1
@@ -68,3 +68,12 @@ RESET_TYPE       .rs 1
 NMI_VECTOR       .rs 2
 RESET_VECTOR     .rs 2
 IRQ_VECTOR       .rs 2
+
+BTN_RIGHT        .equ $01
+BTN_LEFT         .equ $02
+BTN_DOWN         .equ $04
+BTN_UP           .equ $08
+BTN_START        .equ $10
+BTN_SELECT       .equ $20
+BTN_B            .equ $40
+BTN_A            .equ $80
