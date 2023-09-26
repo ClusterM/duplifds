@@ -16,6 +16,21 @@ bleep:
   sta SQ1HI
   rts
 
+beep:
+  ; enable channel
+  lda #%00000100
+  sta APUSTATUS
+  ; triangle
+  lda #%01000000
+  sta TRILINEAR
+  ; timer
+  lda #%1000000
+  sta TRILO
+  ; length counter and timer
+  lda #%00001000
+  sta TRIHI
+  rts
+
 error_sound:
   ; enable channel
   lda #%00000100
@@ -29,6 +44,24 @@ error_sound:
   ; length counter and timer
   lda #%11110011
   sta TRIHI
+  rts
+
+start_sound:
+  ;enable channel
+  lda #%00000001
+  sta APUSTATUS
+  ;square 1
+  lda #%00011111
+  sta SQ1VOL
+  ; sweep
+  lda #%10011010
+  sta SQ1SWEEP
+  ; timer
+  lda #%11111111
+  sta SQ1LO
+  ; length counter and timer
+  lda #%10010000
+  sta SQ1HI
   rts
 
 start_sound_alt:

@@ -197,13 +197,11 @@ infin:
   jmp infin
 
 print_error:
-  ; TODO: error sound
   jsr waitblank
   jsr led_off
   lda <STOP_REASON
   cmp #STOP_CRC_ERROR
   bne .not_crc
-  ; TODO: print number of the block?
   printc_ptr str_err_crc_error
   jmp .done
 .not_crc:
@@ -271,7 +269,7 @@ waitblank:
   bne .no_manual
   lda #1
   sta MANUAL_MODE
-  ; TODO: sound
+  jsr start_sound
 .no_manual:
   jsr scroll_fix
   bit PPUSTATUS
