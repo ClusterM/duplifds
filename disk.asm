@@ -110,12 +110,17 @@ transfer:
 .end:
   lda #(FDS_CONTROL_READ | FDS_CONTROL_MOTOR_OFF)
   sta FDS_CONTROL
+  jsr scroll_fix
   lda #%00011110
   sta PPUMASK
   jsr waitblank
   jsr led_off
   jsr write_game_name
   jsr write_block_counters
+  lda #0 
+  sta OAMADDR
+  lda #HIGH(SPRITES)
+  sta OAMDMA
   rts
 
 read_block:

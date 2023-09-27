@@ -27,6 +27,8 @@ MANUAL_MODE      .rs 1  ; flag that manual disk insert mode enabled
 PPU_MODE_NEXT    .rs 1  ; flag that we must use PPU mode on the next pass
 PPU_MODE_NOW     .rs 1  ; flag that we must use PPU mode on the current pass
 HEADER_CACHE     .rs 56 ; cached disk header
+  .rsset $0300
+SPRITES          .rs 256
 
 STOP_NONE            .equ 0
 STOP_CRC_ERROR       .equ 1

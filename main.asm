@@ -45,22 +45,24 @@ load_palette:
   cpx #20
   bne .loop
 
-  jsr waitblank
-load_sprites:  
-  lda #0 
-  sta OAMADDR
+load_sprites:
+  ; load sprites
   ldy #0
 .loop:
   lda sprites, y
-  sta OAMDATA
+  sta SPRITES, y
   iny
   cpy #(sprites_end - sprites)
   bne .loop
   lda #$FF
 .blank_loop:
-  sta OAMDATA
+  sta SPRITES, y
   iny
   bne .blank_loop  
+  lda #0 
+  sta OAMADDR
+  lda #HIGH(SPRITES)
+  sta OAMDMA
 
   .ifdef COMMIT
 print_commit:
