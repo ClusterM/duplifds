@@ -8,7 +8,7 @@
   .dw Start
   .dw IRQ_disk_read
 
-  .org $D000  ; code starts at $D000
+  .org $D100  ; code starts at $D100
 Start:
   ; disable PPU
   lda #%00000000
@@ -90,85 +90,66 @@ main:
   sta <BLOCK_AMOUNT
   sta <FILE_AMOUNT
   sta <READ_FULL
+  sta <PPU_MODE_NOW
+  sta <PPU_MODE_NEXT
   jsr precalculate_game_name
   jsr precalculate_block_counters
   jsr waitblank
-  jsr led_off
-  jsr write_game_name
-  jsr write_block_counters
 
 .copy_loop
+  ; reading
+  lda <PPU_MODE_NEXT
+  sta <PPU_MODE_NOW
+  lda #0
+  sta <PPU_MODE_NEXT
   lda #OPERATION_READING
   sta <OPERATION
   jsr ask_disk
-  printc_ptr str_reading
-  jsr transfer
+  lda <PPU_MODE_NOW
+  beq .skip_warning
+  ; show warning about black screen
+  printc_ptr str_screen_will_be_off_1
+  ldx #90
+.pause1:
   jsr waitblank
-  jsr led_off
-  jsr write_game_name
-  jsr write_block_counters
-
+  dex
+  bne .pause1
+  printc_ptr str_screen_will_be_off_2
+  ldx #90
+.pause2:
+  jsr waitblank
+  dex
+  bne .pause2
+.skip_warning:
+  printc_ptr str_reading  
+  jsr transfer
+  ; check for errors
   lda <STOP_REASON
-  cmp #STOP_CRC_ERROR
-  beq .crc_error
-  cmp #STOP_INVALID_BLOCK
-  beq .crc_error
-  jmp .not_crc_error
-.crc_error
-  ; it's ok if all visible files are read
-  lda <BLOCKS_READ
-  cmp #2
-  bcs .somethig_read
-  ; can't read anything
+  cmp #STOP_NONE
+  beq .read_ok
   jmp print_error
-.somethig_read:
-  lda <BLOCKS_READ
-  cmp <BLOCK_AMOUNT
-  bcs .not_crc_error_disk_done
-  ; bad block :(
-  jmp print_error
-.not_crc_error_disk_done:
-  inc <READ_FULL
-  jmp .ok_lets_write
-.not_crc_error:
-  ; out of memory?
-  lda <STOP_REASON
-  cmp #STOP_OUT_OF_MEMORY
-  bne .not_out_of_memory
-  lda <BLOCKS_READ
-  cmp <BLOCKS_WRITTEN
-  bne .memory_non_clitical
-  ; can't fit in the memory ever single block
-  jmp print_error
-.memory_non_clitical:
-  ; it's ok, we'll write in multiple passes
-  jmp .ok_lets_write
-.not_out_of_memory:
-  ; other error
-  jmp print_error
-.ok_lets_write:
-
+.read_ok:
+  ; let's write
   lda #OPERATION_WRITING
   sta <OPERATION
   jsr ask_disk
   printc_ptr str_writing
   jsr transfer
-  jsr led_off
-  jsr write_game_name
-  jsr write_block_counters
-
+  ; check for errors
   lda <STOP_REASON
   cmp #STOP_NONE
   beq .write_ok
   jmp print_error
 .write_ok:
-  lda READ_FULL
+  lda <READ_FULL
   bne .copy_done
   jmp .copy_loop
 .copy_done:
 
-  ; check it
+  ; check it  
   printc_ptr str_checking_crc
+  lda #0
+  sta <PPU_MODE_NOW
   jsr transfer
   lda <STOP_REASON
   cmp #STOP_NONE

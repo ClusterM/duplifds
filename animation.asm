@@ -151,7 +151,7 @@ precalculate_block_counters:
   ; so we can patch it on the fly :>
   lda <BLOCK_AMOUNT
   beq .no_blocks
-  lda BLOCKS_READ
+  lda <BLOCKS_READ
   jsr divide10
   clc
   adc #$10
@@ -195,6 +195,11 @@ precalculate_block_counters:
 
 animation:
   ; check for vblank, do not wait for it
+  lda <PPU_MODE_NOW
+  beq .not_ppu_mode
+  ; disable animation during PPU mode
+  rts
+.not_ppu_mode:
   bit PPUSTATUS
   bmi .vblank
   ; return if not vlank

@@ -1,6 +1,26 @@
 transfer:
-  lda #STOP_NONE
+  lda #0
   sta <STOP_REASON
+  sta <BREAK_READ
+  lda <PPU_MODE_NOW
+  beq .not_ppu_mode
+  ; disable rendering
+  lda #%00000000
+  sta PPUMASK
+  jsr waitblank
+  bit PPUSTATUS
+  lda #(MEMORY_PPU_START >> 8)
+  sta PPUADDR
+  lda #(MEMORY_PPU_START & $FF)
+  sta PPUADDR
+  ; TODO: change screen color?
+  ; should we discard first byte?
+  lda <OPERATION
+  cmp #OPERATION_WRITING
+  bne .not_ppu_mode
+  ; discarding byte when writing
+  lda PPUDATA
+.not_ppu_mode:
   ; start address in memory
   lda #(MEMORY_START & $FF)
   sta <READ_OFFSET
@@ -25,6 +45,12 @@ transfer:
   jmp .end
 .battery_ok:
   ; power ok, rewinding
+  ; reset
+  lda #(FDS_CONTROL_READ | FDS_CONTROL_MOTOR_OFF)
+  sta FDS_CONTROL
+  ; start motor
+  lda #(FDS_CONTROL_READ | FDS_CONTROL_MOTOR_ON)
+  sta FDS_CONTROL  
   lda #0
   sta <BLOCK_CURRENT
 .not_ready_yet:
@@ -37,7 +63,9 @@ transfer:
   lda #STOP_NO_DISK
   sta <STOP_REASON
   jmp .end
-.disk_inserted1:
+.disk_inserted1:  
+  ; wait for ready state
+  ; TODO: timeout
   lda FDS_DRIVE_STATUS
   and #FDS_DRIVE_STATUS_DISK_NOT_READY
   bne .not_ready_yet
@@ -46,31 +74,27 @@ transfer:
   lda <OPERATION
   ; reading?
   bne .not_reading
+.reading:
   ; reading block
   jsr read_block
   ; block reading done
   jmp .block_end
 .not_reading:
-  ; writing?
-  cmp #OPERATION_WRITING
-  bne .block_end
   ; writing
   ; stop if BLOCKS_READ = BLOCK_CURRENT
   lda <BLOCKS_READ
   cmp <BLOCK_CURRENT
   beq .end
   ; write if BLOCK_CURRENT >= BLOCKS_WRITTEN
-  ; dump reading otherwise
+  ; dumb reading otherwise
   lda <BLOCK_CURRENT
   cmp <BLOCKS_WRITTEN
-  bcc .dumb_reading
+  bcc .reading
   jsr write_block
-  jmp .block_end
-.dumb_reading:
-  ; block already written, reading without storing
-  jsr read_block
-  jmp .block_end
 .block_end:
+  ; break if need to break
+  lda <BREAK_READ
+  bne .end
   ; check if disk removed
   lda FDS_DRIVE_STATUS
   and #FDS_DRIVE_STATUS_DISK_NOT_INSERTED
@@ -80,23 +104,18 @@ transfer:
   sta <STOP_REASON
   jmp .end
 .disk_inserted2:
-  ; check for end of the disk
-  ; not stable for some reason :(
-  ;lda FDS_DISK_STATUS
-  ;and FDS_DISK_STATUS_END_OF_HEAD
-  ;beq .no_end_of_head
-  ;lda #STOP_END_OF_HEAD
-  ;sta <STOP_REASON
-  ;jmp .end
-.no_end_of_head:
   lda <STOP_REASON
   beq .next_block
   ; reset and stop motor
 .end:
   lda #(FDS_CONTROL_READ | FDS_CONTROL_MOTOR_OFF)
   sta FDS_CONTROL
+  lda #%00011110
+  sta PPUMASK
   jsr waitblank
   jsr led_off
+  jsr write_game_name
+  jsr write_block_counters
   rts
 
 read_block:
@@ -109,8 +128,21 @@ read_block:
 .not_first_block:
   delay 9
 .end_delay
+  ; calculate block size
   jsr calculate_block_size
+  ; dummy read?
+  lda #1
+  ldx <BLOCK_CURRENT
+  cpx <BLOCKS_READ
+  bcc .dummy_reading
+  lda #0
+.dummy_reading:  
+  sta <DUMMY_READ
+  ; we don't need memory check for dummy reading
+  bne .memory_ok
   ; check free memory
+  lda <PPU_MODE_NOW
+  bne .ppu_memory_calculation
   sec
   lda #(MEMORY_END & $FF)
   sbc <READ_OFFSET
@@ -118,6 +150,17 @@ read_block:
   lda #((MEMORY_END >> 8) & $FF)
   sbc <READ_OFFSET + 1
   sta <TEMP + 1
+  jmp .free_memory_calculated
+.ppu_memory_calculation:
+  ; we have more memory if PPU mode activated now
+  sec
+  lda #((MEMORY_END + (MEMORY_PPU_END - MEMORY_PPU_START)) & $FF)
+  sbc <READ_OFFSET
+  sta <TEMP
+  lda #((MEMORY_END + (MEMORY_PPU_END - MEMORY_PPU_START)) >> 8)
+  sbc <READ_OFFSET + 1
+  sta <TEMP + 1
+.free_memory_calculated:
   ; now TEMP = memory left
   sec
   lda <TEMP
@@ -125,20 +168,33 @@ read_block:
   lda <TEMP + 1
   sbc <BLOCK_SIZE + 1
   bcs .memory_ok
+  ; well, it's complicated situation
+  ; lets check size of the next block
+  sec
+  lda #((MEMORY_END - MEMORY_START) & $FF)
+  sbc <BLOCK_SIZE
+  lda #((MEMORY_END - MEMORY_START) >> 8)
+  sbc <BLOCK_SIZE + 1
+  bcs .memory_non_clitical
+  ; oh, block is too large... PPU memory maybe?
+  sec
+  lda #(((MEMORY_END - MEMORY_START) + (MEMORY_PPU_END - MEMORY_PPU_START)) & $FF)
+  sbc <BLOCK_SIZE
+  lda #(((MEMORY_END - MEMORY_START) + (MEMORY_PPU_END - MEMORY_PPU_START)) >> 8)
+  sbc <BLOCK_SIZE + 1
+  bcs .use_ppu_mode
+  ; no, out of memory :(
   lda #STOP_OUT_OF_MEMORY
   sta <STOP_REASON
   rts
+.use_ppu_mode:
+  ; we can fit the next block but using PPU memory
+  inc PPU_MODE_NEXT
+.memory_non_clitical:
+  ; it's ok, we'll read next blocks on the next pass
+  inc <BREAK_READ
+  rts
 .memory_ok
-
-  ; determine read type and skip blocks that already read
-  lda #1
-  ldx <BLOCK_CURRENT
-  cpx <BLOCKS_READ
-  bcc .dummy_reading
-  lda #0
-.dummy_reading:  
-  sta DUMMY_READ
-
   ; reset variables
   lda #0
   sta <BLOCK_OFFSET
@@ -146,7 +202,20 @@ read_block:
   sta <CRC_STATE
   sta <CRC_RESULT
   ; set IRQ vector
+  ; need to determine current memory type - CPU or PPU
+  sec
+  lda <READ_OFFSET
+  sbc #(MEMORY_END & $FF)  
+  lda <READ_OFFSET + 1
+  sbc #(MEMORY_END >> 8)
+  bcc .IRQ_set_normal
+  ; PPU
+  set_IRQ IRQ_disk_read_PPU
+  jmp .reading_start
+.IRQ_set_normal:
+  ; CPU
   set_IRQ IRQ_disk_read
+.reading_start:
   ; start reading
   lda #(FDS_CONTROL_READ | FDS_CONTROL_MOTOR_ON | FDS_CONTROL_TRANSFER_ON | FDS_CONTROL_IRQ_ON)
   sta FDS_CONTROL
@@ -172,18 +241,38 @@ read_block:
   jsr precalculate_game_name
   jsr precalculate_block_counters
 .end:
+  lda <STOP_REASON
+  cmp #STOP_INVALID_BLOCK
+  beq .end_of_disk_check
+  cmp #STOP_CRC_ERROR
+  beq .end_of_disk_check
+  rts  
+.end_of_disk_check:
+  ; bad CRC or bad block
+  lda <BLOCK_CURRENT
+  cmp #2
+  bcc .error
+  cmp <BLOCK_AMOUNT
+  bcc .error
+  ; seems like end of the disk, it's not a error
+  lda #0
+  sta <STOP_REASON
+  inc <READ_FULL
+  inc <BREAK_READ
+  rts
+.error:
   rts
 
 IRQ_disk_read:
-  pha
+  pha  
   ; store data
   lda FDS_DATA_READ
   ; skip blocks that already read
-  ldx DUMMY_READ
-  bne .dummy_reading
+  ldx <DUMMY_READ
+  bne .end_reading
   ldy #0
   sta [READ_OFFSET], y
-.dummy_reading:
+.end_reading:
   ; ack (is it required?)
   ldx #0
   stx FDS_DATA_WRITE
@@ -193,6 +282,8 @@ IRQ_disk_read:
   cmp <BLOCK_TYPE_TEST
   beq .type_check_no
   ; invalid block
+  lda #(FDS_CONTROL_READ | FDS_CONTROL_MOTOR_ON)
+  sta FDS_CONTROL
   lda #STOP_INVALID_BLOCK
   sta <STOP_REASON
   jmp .end
@@ -209,7 +300,75 @@ IRQ_disk_read:
   jsr parse_block
 .skip_parse:
   ; increase address offset if reading new data
-  ldx DUMMY_READ
+  ldx <DUMMY_READ
+  bne .skip_inc_total_offset
+  inc <READ_OFFSET
+  bne .skip_inc_total_offset
+  inc <READ_OFFSET + 1
+.skip_inc_total_offset
+  ; increse current block offset
+  inc <BLOCK_OFFSET
+  bne .block_offset_end
+  inc <BLOCK_OFFSET + 1
+.block_offset_end:
+  lda <BLOCK_OFFSET
+  cmp <BLOCK_SIZE
+  bne .addr_check
+  lda <BLOCK_OFFSET + 1
+  cmp <BLOCK_SIZE + 1
+  bne .addr_check
+.data_end:
+  set_IRQ IRQ_disk_read_CRC
+  jmp .end
+.addr_check
+  lda <READ_OFFSET
+  cmp #(MEMORY_END & $FF)
+  bne .end
+  lda <READ_OFFSET + 1
+  cmp #(MEMORY_END >> 8)
+  bne .end
+  set_IRQ IRQ_disk_read_PPU
+.end:
+  pla
+  rti
+
+IRQ_disk_read_PPU:
+  pha  
+  ; store data
+  lda FDS_DATA_READ
+  ; skip blocks that already read
+  ldx <DUMMY_READ
+  bne .end_reading
+  sta PPUDATA
+.end_reading:
+  ; ack (is it required?)
+  ldx #0
+  stx FDS_DATA_WRITE
+  ; check block type
+  ldx <BLOCK_TYPE_TEST
+  beq .type_check_end
+  cmp <BLOCK_TYPE_TEST
+  beq .type_check_no
+  ; invalid block
+  lda #(FDS_CONTROL_READ | FDS_CONTROL_MOTOR_ON)
+  sta FDS_CONTROL
+  lda #STOP_INVALID_BLOCK
+  sta <STOP_REASON
+  jmp .end
+.type_check_no:
+  ; do not check again, first byte only
+  ldx #0
+  stx <BLOCK_TYPE_TEST
+.type_check_end:
+  ; parse
+  ; fast check
+  ldx <BLOCK_TYPE_ACT
+  cpx #4
+  beq .skip_parse
+  jsr parse_block
+.skip_parse:
+  ; increase address offset if reading new data
+  ldx <DUMMY_READ
   bne .skip_inc_total_offset
   inc <READ_OFFSET
   bne .skip_inc_total_offset
@@ -344,7 +503,7 @@ write_block:
 IRQ_disk_write:
   pha
   ; discard input byte
-  lda FDS_DATA_READ
+  bit FDS_DATA_READ
   lda <WRITING_DONE
   lda #$80
   sta FDS_DATA_WRITE
@@ -354,10 +513,21 @@ IRQ_disk_write:
 
 IRQ_disk_write2:
   pha
-  ; discard input byte
-  lda FDS_DATA_READ
+  ; discard input byte  
+  bit FDS_DATA_READ
+  ; PPU mode?
+  sec
+  lda <READ_OFFSET
+  sbc #(MEMORY_END & $FF)
+  lda <READ_OFFSET + 1
+  sbc #(MEMORY_END >> 8)
+  bcc .not_ppu_mode
+  lda PPUDATA
+  jmp .write
+.not_ppu_mode:
   ldy #0
   lda [READ_OFFSET], y
+.write:
   sta FDS_DATA_WRITE
   ldx <BLOCK_TYPE_ACT
   cpx #4

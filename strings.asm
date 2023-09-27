@@ -14,7 +14,10 @@ str_done:
   .db "SUCCESS! @", $FF
 str_and_press_start:
   .db "AND PRESS START", $FF
-
+str_screen_will_be_off_1:
+  .db "SCREEN WILL BE...", $FF
+str_screen_will_be_off_2:
+  .db "BLANK, DON'T WORRY", $FF
 str_err_crc_error:
   .db "ERR:CRC MISMATCH", $FF
 str_err_invalid_block:
