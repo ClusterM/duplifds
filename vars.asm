@@ -26,6 +26,10 @@ ANIMATION_STATE  .rs 1  ; animation state
 MANUAL_MODE      .rs 1  ; flag that manual disk insert mode enabled
 PPU_MODE_NEXT    .rs 1  ; flag that we must use PPU mode on the next pass
 PPU_MODE_NOW     .rs 1  ; flag that we must use PPU mode on the current pass
+GAME_NAME_UPD    .rs 1  ; flag that game name text updated on the screen
+DISK_SIDE_UPD    .rs 1  ; flag that disk side text updated on the screen
+READ_CNT_UPD     .rs 1  ; flag that read block amount updated on the screen
+WRITTEN_CNT_UPD  .rs 1  ; flag that written block amount updated on the screen
 HEADER_CACHE     .rs 56 ; cached disk header
   .rsset $0300
 SPRITES          .rs 256

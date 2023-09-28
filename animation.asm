@@ -29,7 +29,12 @@ led_off:
   rts
 
 write_game_name:
-  ; write game code and side
+  lda <GAME_NAME_UPD
+  beq .continue
+  rts
+.continue:
+  inc <GAME_NAME_UPD
+  ; write game code
   PPU_to 10, 19
 game_name_byte_1:
   lda #$00
@@ -40,6 +45,15 @@ game_name_byte_2:
 game_name_byte_3:
   lda #$00
   sta PPUDATA
+  rts
+
+write_disk_size:
+  lda <DISK_SIDE_UPD
+  beq .continue
+  rts
+.continue:
+  inc <DISK_SIDE_UPD
+  ; write side
   PPU_to 21, 19
 disk_number_byte:
   lda #$00
@@ -54,6 +68,9 @@ precalculate_game_name:
   ; prepare write_game_name to update text during vblank
   ; all FDS code is located in the RAM,
   ; so we can patch it on the fly :>
+  lda #0
+  sta GAME_NAME_UPD
+  sta DISK_SIDE_UPD
   lda <BLOCKS_READ
   beq .no_header
   ; 3-letter game code
@@ -99,7 +116,12 @@ precalculate_game_name:
   sta side_number_byte + 1
   rts
 
-write_block_counters:
+write_read_block_counters:
+  lda <READ_CNT_UPD
+  beq .continue
+  rts
+.continue:
+  inc <READ_CNT_UPD
   ; write block counters
   PPU_to 8, 21
 blocks_read_byte_1:
@@ -115,6 +137,15 @@ blocks_total_byte_1:
 blocks_total_byte_2:
   lda #$00
   sta PPUDATA
+  rts
+
+write_written_block_counters:
+  lda <WRITTEN_CNT_UPD
+  beq .continue
+  rts
+.continue:
+  inc <WRITTEN_CNT_UPD
+  ; write block counters
   PPU_to 19, 21
 blocks_written_byte_1:
   lda #$00
@@ -149,6 +180,9 @@ precalculate_block_counters:
   ; prepare write_block_counters to update text during vblank
   ; all FDS code is located in the RAM,
   ; so we can patch it on the fly :>
+  lda #0
+  sta READ_CNT_UPD
+  sta WRITTEN_CNT_UPD
   lda <BLOCK_AMOUNT
   beq .no_blocks
   lda <BLOCKS_READ
@@ -222,12 +256,22 @@ animation:
   cmp #$02
   bne .step_3
   ; TODO: call it only when it's changed?
-  jsr write_block_counters
+  jsr write_disk_size
   jmp .end
-.step_3
-  cmp #$04
-  bne .end
+.step_3:
+  cmp #$03
+  bne .step_4
   jsr led_off
+  jmp .end
+.step_4:
+  cmp #$04
+  bne .step_5
+  jsr write_read_block_counters
+  jmp .end
+.step_5
+  cmp #$05
+  bne .end
+  jsr write_written_block_counters
 .end:
   jsr scroll_fix
   rts

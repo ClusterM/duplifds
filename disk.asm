@@ -120,7 +120,10 @@ transfer:
   jsr waitblank
   jsr led_off
   jsr write_game_name
-  jsr write_block_counters
+  jsr write_disk_size
+  jsr waitblank
+  jsr write_read_block_counters
+  jsr write_written_block_counters
   jsr waitblank
   lda #0 
   sta OAMADDR
