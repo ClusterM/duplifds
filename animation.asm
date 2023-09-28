@@ -231,10 +231,14 @@ precalculate_block_counters:
 animation:
   ; check for vblank, do not wait for it
   lda <PPU_MODE_NOW
-  beq .not_ppu_mode
+  bne .end
+  ; only during data blocks (IRQ faster)
+  lda <BLOCK_CURRENT
+  cmp #2
+  bcc .end
+  and #1
+  beq .end
   ; disable animation during PPU mode
-  rts
-.not_ppu_mode:
   bit PPUSTATUS
   bmi .vblank
   ; return if not vlank
