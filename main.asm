@@ -298,7 +298,7 @@ printc_no_vlank:
   jsr scroll_fix
   rts
 .end:
-  lda #0  
+  lda #SPACE_CHAR
 .loop_blank:
   cpy #18
   bne .print_space
@@ -386,29 +386,29 @@ palette:
 
 ascii:
   ; characters: <space>!"#$%&'
-  .db $00, $01, $02, $03, $04, $05, $06, $07
-  ; characters: ()*+,-./
-  .db $08, $09, $0A, $0B, $0C, $0D, $0E, $0F
-  ; characters: 01234567
   .db $10, $11, $12, $13, $14, $15, $16, $17
-  ; characters: 89:;<=>?
+  ; characters: ()*+,-./
   .db $18, $19, $1A, $1B, $1C, $1D, $1E, $1F
-  ; characters: @ABCDEFG
+  ; characters: 01234567
   .db $20, $21, $22, $23, $24, $25, $26, $27
+  ; characters: 89:;<=>?
+  .db $28, $29, $2A, $2B, $2C, $2D, $2E, $2F
+  ; characters: @ABCDEFG
+  .db $30, $31, $32, $33, $34, $35, $36, $37
   ; characters: HIJKLMNO
-  .db $28, $29, $2A, $2B, $2C, $2D, $2E, $10
+  .db $38, $39, $3A, $3B, $3C, $3D, $3E, $20
   ; characters: PQRSTUVW
-  .db $2F, $30, $31, $32, $33, $34, $35, $36
+  .db $3F, $40, $41, $42, $43, $44, $45, $46
   ; characters: XYZ[\]^_
-  .db $37, $38, $39, $3A, $3B, $3C, $3D, $3E
+  .db $47, $48, $49, $4A, $4B, $4C, $4D, $4E
   ; characters: 'abcdefg
-  .db $3F, $21, $22, $23, $24, $25, $26, $27
+  .db $4F, $31, $32, $33, $34, $35, $36, $37
   ; characters: hijklmno
-  .db $28, $29, $2A, $2B, $2C, $2D, $2E, $10
+  .db $38, $39, $3A, $3B, $3C, $3D, $3E, $20
   ; characters: pqrstuvw
-  .db $2F, $30, $31, $32, $33, $34, $35, $36
+  .db $3F, $40, $41, $42, $43, $44, $45, $46
   ; characters: xyz{|}~
-  .db $37, $38, $39, $40, $41, $42, $43, $00
+  .db $47, $48, $49, $50, $51, $42, $53, $10
 
 sprites:
   ; X, tile #, attributes, Y

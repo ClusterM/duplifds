@@ -31,7 +31,7 @@
           "file_number": "1",
           "file_indicate_code": "0",
           "file_name": "CHR",
-          "file_address": "$0000",
+          "file_address": "$0100",
           "file_kind": "Character",
           "data": "bg_pattern_table.bin"
         },

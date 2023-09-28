@@ -48,6 +48,7 @@ $(OUTPUT_IMAGE): $(EXECUTABLE) diskinfo.json
  $(BG_PATTERN) $(PALETTE0) $(PALETTE1) $(PALETTE2) $(PALETTE3) $(BG_NAMETABLE) $(BG_ATTR_TABLE): $(ASCII_IMAGE) $(BG_IMAGE)
 	$(TILER) -i0 $(ASCII_IMAGE) -i1 $(BG_IMAGE) \
 	--bg-color \#000000 --share-pattern-table \
+	--pattern-offset 16 \
 	--palette-0 \#c4c4c4,\#008088,\#005000 \
 	--palette-1 \#c4c4c4,\#008088,\#f0bc3c \
 	--palette-2 \#c4c4c4,\#008088,\#fc7460 \

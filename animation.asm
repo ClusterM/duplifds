@@ -72,43 +72,44 @@ precalculate_game_name:
   sta GAME_NAME_UPD
   sta DISK_SIDE_UPD
   lda <BLOCKS_READ
-  beq .no_header
+  cmp #2
+  bcc .no_header
   ; 3-letter game code
   lda HEADER_CACHE + $10
   sec
   sbc #$20
-  bmi .no_game_code
+  bmi .game_code
   tax
   lda ascii, x  
   sta game_name_byte_1 + 1
   lda HEADER_CACHE + $11
   sec
   sbc #$20
-  bmi .no_game_code
+  bmi .game_code
   tax
   lda ascii, x  
   sta game_name_byte_2 + 1
   lda HEADER_CACHE + $12
   sec
   sbc #$20
-  bmi .no_game_code
+  bmi .game_code
   tax
   lda ascii, x
   sta game_name_byte_3 + 1
-.no_game_code:
+.game_code:
   ; disk number
   lda HEADER_CACHE + $16
   clc
-  adc #$11
+  adc #(SPACE_CHAR + $11)
   sta disk_number_byte + 1
   ; side number
   lda HEADER_CACHE + $15
   clc
-  adc #$21
+  adc #(SPACE_CHAR + $21)
   sta side_number_byte + 1
   rts
 .no_header:
-  lda #0
+  lda #SPACE_CHAR
   sta game_name_byte_1 + 1
   sta game_name_byte_2 + 1
   sta game_name_byte_3 + 1
@@ -188,35 +189,35 @@ precalculate_block_counters:
   lda <BLOCKS_READ
   jsr divide10
   clc
-  adc #$10
+  adc #(SPACE_CHAR + $10)
   sta blocks_read_byte_2 + 1
   txa
   clc
-  adc #$10
+  adc #(SPACE_CHAR + $10)
   sta blocks_read_byte_1 + 1
   lda BLOCKS_WRITTEN
   jsr divide10
   clc
-  adc #$10
+  adc #(SPACE_CHAR + $10)
   sta blocks_written_byte_2 + 1
   txa
   clc
-  adc #$10
+  adc #(SPACE_CHAR + $10)
   sta blocks_written_byte_1 + 1
   lda BLOCK_AMOUNT
   jsr divide10
   clc
-  adc #$10
+  adc #(SPACE_CHAR + $10)
   sta blocks_total_byte_2 + 1
   sta blocks_total_byte_2b + 1
   txa
   clc
-  adc #$10
+  adc #(SPACE_CHAR + $10)
   sta blocks_total_byte_1 + 1
   sta blocks_total_byte_1b + 1
   rts
 .no_blocks:
-  lda #0
+  lda #SPACE_CHAR
   sta blocks_read_byte_1 + 1
   sta blocks_read_byte_2 + 1
   sta blocks_written_byte_1 + 1
