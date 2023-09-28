@@ -52,4 +52,4 @@ MEMORY_END           .equ $D100
 MEMORY_PPU_START     .equ $1000
 MEMORY_PPU_END       .equ $2000
 
-SPACE_CHAR           .equ $10
+SPACE           .equ $10

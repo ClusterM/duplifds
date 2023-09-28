@@ -298,7 +298,7 @@ printc_no_vlank:
   jsr scroll_fix
   rts
 .end:
-  lda #SPACE_CHAR
+  lda #SPACE
 .loop_blank:
   cpy #18
   bne .print_space
@@ -386,29 +386,29 @@ palette:
 
 ascii:
   ; characters: <space>!"#$%&'
-  .db $10, $11, $12, $13, $14, $15, $16, $17
+  .db SPACE + $00, SPACE + $01, SPACE + $02, SPACE + $03, SPACE + $04, SPACE + $05, SPACE + $06, SPACE + $07
   ; characters: ()*+,-./
-  .db $18, $19, $1A, $1B, $1C, $1D, $1E, $1F
+  .db SPACE + $08, SPACE + $09, SPACE + $0A, SPACE + $0B, SPACE + $0C, SPACE + $0D, SPACE + $0E, SPACE + $0F
   ; characters: 01234567
-  .db $20, $21, $22, $23, $24, $25, $26, $27
+  .db SPACE + $10, SPACE + $11, SPACE + $12, SPACE + $13, SPACE + $14, SPACE + $15, SPACE + $16, SPACE + $17
   ; characters: 89:;<=>?
-  .db $28, $29, $2A, $2B, $2C, $2D, $2E, $2F
+  .db SPACE + $18, SPACE + $19, SPACE + $1A, SPACE + $1B, SPACE + $1C, SPACE + $1D, SPACE + $1E, SPACE + $1F
   ; characters: @ABCDEFG
-  .db $30, $31, $32, $33, $34, $35, $36, $37
+  .db SPACE + $20, SPACE + $21, SPACE + $22, SPACE + $23, SPACE + $24, SPACE + $25, SPACE + $26, SPACE + $27
   ; characters: HIJKLMNO
-  .db $38, $39, $3A, $3B, $3C, $3D, $3E, $20
+  .db SPACE + $28, SPACE + $29, SPACE + $2A, SPACE + $2B, SPACE + $2C, SPACE + $2D, SPACE + $2E, SPACE + $10
   ; characters: PQRSTUVW
-  .db $3F, $40, $41, $42, $43, $44, $45, $46
+  .db SPACE + $2F, SPACE + $30, SPACE + $31, SPACE + $32, SPACE + $33, SPACE + $34, SPACE + $35, SPACE + $36
   ; characters: XYZ[\]^_
-  .db $47, $48, $49, $4A, $4B, $4C, $4D, $4E
+  .db SPACE + $37, SPACE + $38, SPACE + $39, SPACE + $3A, SPACE + $3B, SPACE + $3C, SPACE + $3D, SPACE + $3E
   ; characters: 'abcdefg
-  .db $4F, $31, $32, $33, $34, $35, $36, $37
+  .db SPACE + $3F, SPACE + $21, SPACE + $22, SPACE + $23, SPACE + $24, SPACE + $25, SPACE + $26, SPACE + $27
   ; characters: hijklmno
-  .db $38, $39, $3A, $3B, $3C, $3D, $3E, $20
+  .db SPACE + $28, SPACE + $29, SPACE + $2A, SPACE + $2B, SPACE + $2C, SPACE + $2D, SPACE + $2E, SPACE + $10
   ; characters: pqrstuvw
-  .db $3F, $40, $41, $42, $43, $44, $45, $46
+  .db SPACE + $2F, SPACE + $30, SPACE + $31, SPACE + $32, SPACE + $33, SPACE + $34, SPACE + $35, SPACE + $36
   ; characters: xyz{|}~
-  .db $47, $48, $49, $50, $51, $42, $53, $10
+  .db SPACE + $37, SPACE + $38, SPACE + $39, SPACE + $40, SPACE + $41, SPACE + $42, SPACE + $43, SPACE + $00
 
 sprites:
   ; X, tile #, attributes, Y
