@@ -88,8 +88,12 @@ transfer:
   ; write if BLOCK_CURRENT >= BLOCKS_WRITTEN
   ; dumb reading otherwise
   lda <BLOCK_CURRENT
+  ; file amount block? force write
+  cmp #1
+  beq .writing
   cmp <BLOCKS_WRITTEN
   bcc .reading
+.writing:
   jsr write_block
 .block_end:
   ; break if need to break
@@ -117,10 +121,12 @@ transfer:
   jsr led_off
   jsr write_game_name
   jsr write_block_counters
+  jsr waitblank
   lda #0 
   sta OAMADDR
   lda #HIGH(SPRITES)
   sta OAMDMA
+  jsr waitblank
   rts
 
 read_block:
@@ -500,7 +506,18 @@ write_block:
   ; update BLOCKS_WRITTEN if success
   lda <STOP_REASON
   bne .end
+  ; skip BLOCKS_WRITTEN increament
+  ; if file amount block already written
+  lda <BLOCK_CURRENT
+  cmp #2 ; already incremented
+  bne .inc_block
+  lda <BLOCKS_WRITTEN
+  cmp #1
+  beq .inc_block
+  jmp .skip_inc
+.inc_block:
   inc <BLOCKS_WRITTEN
+.skip_inc:
   jsr precalculate_block_counters
 .end:
   rts
@@ -512,7 +529,15 @@ IRQ_disk_write:
   lda <WRITING_DONE
   lda #$80
   sta FDS_DATA_WRITE
+  lda <BLOCK_CURRENT
+  cmp #1
+  beq .file_amount
   set_IRQ IRQ_disk_write2 
+  pla
+  rti
+.file_amount:
+  ; file amount block
+  set_IRQ IRQ_disk_write2_file_amount
   pla
   rti
 
@@ -553,6 +578,49 @@ IRQ_disk_write2:
   bne .end
   lda <BLOCK_OFFSET + 1
   cmp <BLOCK_SIZE + 1
+  bne .end
+  ; end of data
+  set_IRQ IRQ_disk_write3
+.end:
+  pla
+  rti
+
+IRQ_disk_write2_file_amount:
+  pha
+  ; discard input byte  
+  bit FDS_DATA_READ
+  ; first or second byte?
+  lda <BLOCK_OFFSET
+  bne .second
+  ldx #2 ; block ID
+  jmp .write_data
+.second:
+  ; final write?
+  lda <READ_FULL
+  bne .final
+  lda <BLOCKS_READ
+  ; convert to file amount
+  sec
+  sbc #2
+  lsr A
+  tax
+  jmp .write_data
+.final:
+  ldx <FILE_AMOUNT
+.write_data:
+  ; write
+  stx FDS_DATA_WRITE
+  ; increament offset only for first write
+  lda <BLOCKS_WRITTEN
+  cmp #1
+  bne .total_offset_end
+  inc <READ_OFFSET
+.total_offset_end
+  ; increse current block offset
+  inc <BLOCK_OFFSET
+.block_offset_end:
+  lda <BLOCK_OFFSET
+  cmp <BLOCK_SIZE
   bne .end
   ; end of data
   set_IRQ IRQ_disk_write3
@@ -646,7 +714,11 @@ parse_block:
   bne .not_file_amount
   ; store file amount
   cpx #1
-  bne .end  
+  ; skip if not second byte
+  bne .end
+  ldx <BLOCK_AMOUNT
+  ; skip if already parsed
+  bne .end
   sta <FILE_AMOUNT
   clc
   adc <FILE_AMOUNT
