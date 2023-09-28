@@ -48,7 +48,7 @@ OPERATION_READING    .equ 0
 OPERATION_WRITING    .equ 1
 
 MEMORY_START         .equ $6000
-MEMORY_END           .equ $D100
+MEMORY_END           .equ $D300
 MEMORY_PPU_START     .equ $1000
 MEMORY_PPU_END       .equ $2000
 

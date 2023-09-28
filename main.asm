@@ -8,7 +8,7 @@
   .dw Start
   .dw IRQ_disk_read
 
-  .org $D100  ; code starts at $D100
+  .org $D300  ; code starts at $D300
 Start:
   ; disable PPU
   lda #%00000000
