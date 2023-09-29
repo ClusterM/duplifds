@@ -47,6 +47,7 @@ STOP_INVALID_BLOCK   .equ 8
 OPERATION_READING    .equ 0
 OPERATION_WRITING    .equ 1
 
+; memory regions
 MEMORY_START         .equ $6000
 MEMORY_END           .equ $D300
 MEMORY_PPU_START     .equ $1000

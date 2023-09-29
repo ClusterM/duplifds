@@ -159,7 +159,7 @@ main:
   jmp print_error
 .verify_ok:
 
-  jsr start_sound_alt
+  jsr done_sound
   printc_ptr str_done
 
 done:
@@ -172,12 +172,6 @@ done:
   beq done
 .end:
   jmp main
-
-  ; main loop        
-infin:
-  jsr waitblank
-  jsr ReadOrDownPads
-  jmp infin
 
 print_error:
   jsr waitblank
@@ -252,7 +246,7 @@ waitblank:
   bne .no_manual
   lda #1
   sta MANUAL_MODE
-  jsr start_sound
+  jsr manual_mode_sound
 .no_manual:
   jsr scroll_fix
   bit PPUSTATUS
@@ -281,7 +275,7 @@ scroll_fix:
 printc:
   ; write message to the center line
   jsr waitblank
-printc_no_vlank:
+printc_no_vblank:
   PPU_to 6, 17
   ldy #0
 .loop:

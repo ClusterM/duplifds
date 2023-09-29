@@ -31,7 +31,7 @@ printc_ptr_no_vblank .macro
   sta <COPY_SOURCE_ADDR
   lda #HIGH(\1)
   sta <COPY_SOURCE_ADDR+1
-  jsr printc_no_vlank
+  jsr printc_no_vblank
   .endm
 
 delay .macro
