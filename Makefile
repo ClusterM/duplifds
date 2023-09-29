@@ -75,7 +75,7 @@ $(S_PATTERN) $(S_PALETTE0): $(S_PRITES)
 	$(TILER) -i0 $(S_PRITES) \
 	--bg-color \#000000 \
 	--mode sprites8x8 \
-	--palette-0 \#a8f0bc,\#f0bc3c,\#7c0800 \
+	--palette-0 \#a8f0bc,\#f0bc3c,\#787878 \
 	--out-pattern-table $(S_PATTERN) \
 	--out-palette-0 $(S_PALETTE0)
 

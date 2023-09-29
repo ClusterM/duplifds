@@ -237,7 +237,7 @@ read_block:
   bit PPUSTATUS
 .wait_data
   ; TODO: timeout
-  jsr animation
+  jsr animation_read
   lda <STOP_REASON
   bne .end
   lda <CRC_RESULT
@@ -482,7 +482,7 @@ write_block:
   sta FDS_CONTROL
   bit PPUSTATUS
 .wait_write_end:
-  jsr animation
+  jsr animation_write
   lda <STOP_REASON
   bne .end
   lda <WRITING_DONE
