@@ -492,15 +492,6 @@ write_block:
 .write_CRC_wait:
   dex
   bne .write_CRC_wait
-.wait_ready:
-  ; do we really need this check?
-  lda FDS_DRIVE_STATUS
-  and #FDS_DRIVE_STATUS_DISK_NOT_READY
-  beq .ready_ok
-  lda #STOP_NOT_READY
-  sta <STOP_REASON
-  jmp .end
-.ready_ok:
   ; motor on without transfer
   lda #(FDS_CONTROL_READ | FDS_CONTROL_MOTOR_ON)
   sta FDS_CONTROL

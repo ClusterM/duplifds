@@ -28,4 +28,3 @@ str_err_not_ready:
   .db "ERR:NOT READY", $FF
 str_err_unknown:
   .db "UNKNOWN ERROR", $FF
-  
