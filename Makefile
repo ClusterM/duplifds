@@ -53,7 +53,7 @@ $(RAM_BINARY_CUT): $(RAM_BINARY) $(RAM_SOURCE_MORE)
 	dd if=$(RAM_BINARY) of=$(RAM_BINARY_CUT) bs=256 count=4
 
 $(OUTPUT_IMAGE): $(EXECUTABLE) $(RAM_BINARY_CUT) diskinfo.json
-	$(FDSPACKER) pack diskinfo.json $(OUTPUT_IMAGE)
+	$(FDSPACKER) pack --header diskinfo.json $(OUTPUT_IMAGE)
 
  $(BG_PATTERN) $(PALETTE0) $(PALETTE1) $(PALETTE2) $(PALETTE3) $(BG_NAMETABLE) $(BG_ATTR_TABLE): $(ASCII_IMAGE) $(BG_IMAGE)
 	$(TILER) -i0 $(ASCII_IMAGE) -i1 $(BG_IMAGE) \
@@ -83,7 +83,7 @@ $(COMMIT_FILE):
 	git rev-parse --short HEAD | tr -d '\n' > $(COMMIT_FILE)
 
 clean:
-	rm -f $(EXECUTABLE) $(OUTPUT_IMAGE) *.lst *.nl *.bin $(COMMIT_FILE)
+	rm -f $(EXECUTABLE) $(OUTPUT_IMAGE) $(RAM_BINARY) *.lst *.nl *.bin $(COMMIT_FILE)
 
 run: $(OUTPUT_IMAGE)
 	$(EMU) $(OUTPUT_IMAGE)

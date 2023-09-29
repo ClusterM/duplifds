@@ -21,10 +21,11 @@ str_err_no_disk:
 str_err_no_power:
   .db "ERR:NO POWER", $FF
 str_err_end_of_head:
-  .db "ERR:DISK IS FULL"
+  .db "ERR:DISK IS FULL", $FF
 str_err_different_disk:
-  .db "ERR:DIFFERENT DISK"
+  .db "ERR:DIFFERENT DISK", $FF
 str_err_not_ready:
-  .db "ERR:NOT READY"
+  .db "ERR:NOT READY", $FF
 str_err_unknown:
-  .db "UNKNOWN ERROR"
+  .db "UNKNOWN ERROR", $FF
+  

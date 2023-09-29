@@ -161,73 +161,87 @@ main:
 
   jsr done_sound
   printc_ptr str_done
+  jsr wait_button_or_eject
+  jmp main
 
-done:
+wait_button_or_eject:
+  ; wait until any button is pressed or disk is ejected
   jsr waitblank
   lda JOY1_HOLD
   ora JOY2_HOLD
   bne .end
   lda FDS_DRIVE_STATUS
   and #FDS_DRIVE_STATUS_DISK_NOT_INSERTED
-  beq done
+  beq wait_button_or_eject
 .end:
-  jmp main
+  rts
+
+wait_button:
+  ; wait until any button is pressed
+  jsr waitblank
+  lda JOY1_HOLD
+  ora JOY2_HOLD
+  beq wait_button
+  rts
 
 print_error:
+  jsr error_sound
   jsr waitblank
   jsr led_off
   lda <STOP_REASON
   cmp #STOP_CRC_ERROR
   bne .not_crc
   printc_ptr str_err_crc_error
-  jmp .done
+  jsr wait_button_or_eject
+  jmp main
 .not_crc:
   cmp #STOP_OUT_OF_MEMORY
   bne .not_out_of_memory
   printc_ptr str_err_out_of_memory
-  jmp .done
+  jsr wait_button_or_eject
+  jmp main
 .not_out_of_memory:
   cmp #STOP_NO_DISK
   bne .not_no_disk
   printc_ptr str_err_no_disk
-  jmp .done
+  jsr wait_button
+  jmp main
 .not_no_disk:
   cmp #STOP_NO_POWER
   bne .not_no_power
   printc_ptr str_err_no_power
-  jmp .done
+  jsr wait_button_or_eject
+  jmp main
 .not_no_power:
   cmp #STOP_END_OF_HEAD
   bne .not_end_of_head
   printc_ptr str_err_end_of_head
-  jmp .done
+  jsr wait_button_or_eject
+  jmp main
 .not_end_of_head:
   cmp #STOP_WRONG_HEADER
   bne .not_wrong_header
   printc_ptr str_err_different_disk
-  jmp .done
+  jsr wait_button_or_eject
+  jmp main
 .not_wrong_header:
   cmp #STOP_NOT_READY
   bne .not_not_ready
   printc_ptr str_err_not_ready
-  jmp .done
+  jsr wait_button_or_eject
+  jmp main
 .not_not_ready:
   cmp #STOP_INVALID_BLOCK
   bne .not_invalid_block
   printc_ptr str_err_invalid_block
-  jmp .done
+  jsr wait_button_or_eject
+  jmp main
 .not_invalid_block:
   printc_ptr str_err_unknown
-  jmp .done
+  jsr wait_button_or_eject
+  jmp main
 .done:
   jsr error_sound
-.loop:
-  ; wait for any button
-  jsr waitblank
-  lda JOY1_HOLD
-  ora JOY2_HOLD
-  beq .loop
-  jmp main
 
   ; delay for TIMER_COUNTER*1000 CPU cycles
 delay_sub:
