@@ -46,7 +46,7 @@ error_sound:
   sta TRIHI
   rts
 
-start_sound:
+manual_mode_sound:
   ;enable channel
   lda #%00000001
   sta APUSTATUS
@@ -64,7 +64,7 @@ start_sound:
   sta SQ1HI
   rts
 
-start_sound_alt:
+done_sound:
   ; enable channel
   lda #%00000001
   sta APUSTATUS

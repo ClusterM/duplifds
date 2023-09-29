@@ -254,13 +254,11 @@ animation:
 .step_1:
   cmp #$01
   bne .step_2
-  ; TODO: call it only when it's changed?
   jsr write_game_name
   jmp .end
 .step_2:
   cmp #$02
   bne .step_3
-  ; TODO: call it only when it's changed?
   jsr write_disk_size
   jmp .end
 .step_3:
