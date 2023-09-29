@@ -114,9 +114,6 @@ transfer:
 .end:
   lda #(FDS_CONTROL_READ | FDS_CONTROL_MOTOR_OFF)
   sta FDS_CONTROL
-  jsr scroll_fix
-  lda #%00011110
-  sta PPUMASK
   jsr waitblank
   jsr led_off
   jsr write_game_name
@@ -129,6 +126,9 @@ transfer:
   sta OAMADDR
   lda #HIGH(SPRITES)
   sta OAMDMA
+  jsr waitblank
+  lda #%00011110
+  sta PPUMASK
   jsr waitblank
   rts
 
