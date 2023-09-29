@@ -26,6 +26,7 @@ jobs:
       NESASM_REPO: https://github.com/ClusterM/nesasm
       NESASM_DIR: nesasm-source
       NESASM_OUT: nesasm-source
+      OUTPUT_FILE: duplifds.zip
     steps:
     - name: Checkout DupliFDS
       uses: actions/checkout@v3
@@ -70,7 +71,7 @@ jobs:
       uses: actions/upload-artifact@v3
       with:
         name: duplifds
-        path: duplifds.zip
+        path: ${{ OUTPUT_FILE }}
   upload-to-pages:
     needs: build
     runs-on: ubuntu-latest
