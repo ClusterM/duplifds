@@ -58,12 +58,3 @@ RESET_TYPE       .rs 1
 NMI_VECTOR       .rs 2
 RESET_VECTOR     .rs 2
 IRQ_VECTOR       .rs 2
-
-BTN_A            .equ $01
-BTN_B            .equ $02
-BTN_SELECT       .equ $04
-BTN_START        .equ $08
-BTN_UP           .equ $10
-BTN_DOWN         .equ $20
-BTN_LEFT         .equ $40
-BTN_RIGHT        .equ $80
