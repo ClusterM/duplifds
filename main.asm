@@ -6,9 +6,9 @@
   .org $DFFA  ; start at $DFFA
   .dw NMI
   .dw Start
-  .dw IRQ_disk_read
+  .dw IRQ_none
 
-  .org $D300  ; code starts at $D300
+  .org $D500  ; code starts at $D500
 Start:
   ; disable PPU
   lda #%00000000
@@ -229,96 +229,6 @@ print_error:
   beq .loop
   jmp main
 
-waitblank:
-  pha
-  txa
-  pha
-  tya
-  pha
-  jsr ReadOrDownPads
-  ; enable manual mode if select pressed
-  lda JOY1_HOLD
-  ora JOY2_HOLD
-  and #BTN_SELECT
-  beq .no_manual
-  ; already manual mode?
-  lda MANUAL_MODE
-  bne .no_manual
-  lda #1
-  sta MANUAL_MODE
-  jsr manual_mode_sound
-.no_manual:
-  jsr scroll_fix
-  bit PPUSTATUS
-.loop:
-  bit PPUSTATUS  ; load A with value at location PPUSTATUS
-  bpl .loop  ; if bit 7 is not set (not VBlank) keep checking
-  pla
-  tay
-  pla
-  tax
-  pla
-  rts
-
-scroll_fix:
-  ; fix scrolling
-  pha
-  lda #%00000000
-  sta PPUCTRL
-  bit PPUSTATUS
-  lda #0
-  sta PPUSCROLL
-  sta PPUSCROLL
-  pla
-  rts
-
-printc:
-  ; write message to the center line
-  jsr waitblank
-printc_no_vblank:
-  PPU_to 6, 17
-  ldy #0
-.loop:
-  lda [COPY_SOURCE_ADDR], y
-  bmi .end ; skip $80-$FF
-  sec
-  sbc #$20
-  tax
-  lda ascii, x
-  sta PPUDATA
-  iny
-  cpy #18
-  bne .loop
-  jsr scroll_fix
-  rts
-.end:
-  lda #SPACE
-.loop_blank:
-  cpy #18
-  bne .print_space
-  jsr scroll_fix
-  rts
-.print_space:
-  sta PPUDATA
-  iny
-  bne .loop_blank
-
-print:
-  ; just write message
-  ldy #0
-.loop:
-  lda [COPY_SOURCE_ADDR], y
-  bmi .end ; skip $80-$FF
-  sec
-  sbc #$20
-  tax
-  lda ascii, x
-  sta PPUDATA
-  iny
-  bne .loop
-.end:
-  rts
-
   ; delay for TIMER_COUNTER*1000 CPU cycles
 delay_sub:
   set_IRQ IRQ_delay
@@ -357,6 +267,9 @@ IRQ_delay:
 .end:
   rti
 
+IRQ_none:
+  rti
+
 NMI:
   ; reset to the main entry point
   lda #$35
@@ -368,8 +281,6 @@ NMI:
   .include "disk.asm"
   .include "strings.asm"
   .include "animation.asm"
-  .include "askdisk.asm"
-  .include "sounds.asm"
 
 palette: 
   .incbin "palette0.bin"
@@ -377,32 +288,6 @@ palette:
   .incbin "palette2.bin"
   .incbin "palette3.bin"
   .incbin "spalette0.bin"
-
-ascii:
-  ; characters: <space>!"#$%&'
-  .db SPACE + $00, SPACE + $01, SPACE + $02, SPACE + $03, SPACE + $04, SPACE + $05, SPACE + $06, SPACE + $07
-  ; characters: ()*+,-./
-  .db SPACE + $08, SPACE + $09, SPACE + $0A, SPACE + $0B, SPACE + $0C, SPACE + $0D, SPACE + $0E, SPACE + $0F
-  ; characters: 01234567
-  .db SPACE + $10, SPACE + $11, SPACE + $12, SPACE + $13, SPACE + $14, SPACE + $15, SPACE + $16, SPACE + $17
-  ; characters: 89:;<=>?
-  .db SPACE + $18, SPACE + $19, SPACE + $1A, SPACE + $1B, SPACE + $1C, SPACE + $1D, SPACE + $1E, SPACE + $1F
-  ; characters: @ABCDEFG
-  .db SPACE + $20, SPACE + $21, SPACE + $22, SPACE + $23, SPACE + $24, SPACE + $25, SPACE + $26, SPACE + $27
-  ; characters: HIJKLMNO
-  .db SPACE + $28, SPACE + $29, SPACE + $2A, SPACE + $2B, SPACE + $2C, SPACE + $2D, SPACE + $2E, SPACE + $10
-  ; characters: PQRSTUVW
-  .db SPACE + $2F, SPACE + $30, SPACE + $31, SPACE + $32, SPACE + $33, SPACE + $34, SPACE + $35, SPACE + $36
-  ; characters: XYZ[\]^_
-  .db SPACE + $37, SPACE + $38, SPACE + $39, SPACE + $3A, SPACE + $3B, SPACE + $3C, SPACE + $3D, SPACE + $3E
-  ; characters: 'abcdefg
-  .db SPACE + $3F, SPACE + $21, SPACE + $22, SPACE + $23, SPACE + $24, SPACE + $25, SPACE + $26, SPACE + $27
-  ; characters: hijklmno
-  .db SPACE + $28, SPACE + $29, SPACE + $2A, SPACE + $2B, SPACE + $2C, SPACE + $2D, SPACE + $2E, SPACE + $10
-  ; characters: pqrstuvw
-  .db SPACE + $2F, SPACE + $30, SPACE + $31, SPACE + $32, SPACE + $33, SPACE + $34, SPACE + $35, SPACE + $36
-  ; characters: xyz{|}~
-  .db SPACE + $37, SPACE + $38, SPACE + $39, SPACE + $40, SPACE + $41, SPACE + $42, SPACE + $43, SPACE + $00
 
 sprites:
   ; X, tile #, attributes, Y

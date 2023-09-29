@@ -1,7 +1,9 @@
-  ; zero page
-  .rsset $0010
+; zero page
+  .rsset $0000
 COPY_SOURCE_ADDR .rs 2  ; address storage for copy operations
 TEMP             .rs 2  ; just temporary memory
+JOY1_HOLD        .rs 1  ; first controller state
+JOY2_HOLD        .rs 1  ; second controller state
 TIMER_COUNTER    .rs 2  ; timer counter (1 for 1000 ticks)
 BLOCK_CURRENT    .rs 1  ; number of the current block
 BLOCK_TYPE_TEST  .rs 1  ; type that _should_ be for the current block
@@ -34,6 +36,16 @@ HEADER_CACHE     .rs 56 ; cached disk header
   .rsset $0300
 SPRITES          .rs 256
 
+; constants
+BTN_A            .equ $01
+BTN_B            .equ $02
+BTN_SELECT       .equ $04
+BTN_START        .equ $08
+BTN_UP           .equ $10
+BTN_DOWN         .equ $20
+BTN_LEFT         .equ $40
+BTN_RIGHT        .equ $80
+
 STOP_NONE            .equ 0
 STOP_CRC_ERROR       .equ 1
 STOP_OUT_OF_MEMORY   .equ 2
@@ -49,8 +61,24 @@ OPERATION_WRITING    .equ 1
 
 ; memory regions
 MEMORY_START         .equ $6000
-MEMORY_END           .equ $D300
+MEMORY_END           .equ $D500
 MEMORY_PPU_START     .equ $1000
 MEMORY_PPU_END       .equ $2000
 
-SPACE           .equ $10
+; first character (space) tile id
+SPACE                .equ $10
+
+; subroutines in the RAM
+RAMCODE              .equ $0400
+waitblank            .equ $0400
+scroll_fix           .equ $0460
+printc               .equ $0480
+printc_no_vblank     .equ $0483
+print                .equ $0500
+bleep                .equ $0520
+beep                 .equ $0540
+error_sound          .equ $0560
+manual_mode_sound    .equ $0580
+done_sound           .equ $0600
+ask_disk             .equ $0640
+ascii                .equ $0780

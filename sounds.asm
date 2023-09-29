@@ -1,4 +1,6 @@
-bleep:
+
+  .org (bleep - RAMCODE)
+bleep_ram:
   ; enable channel
   lda #%00000001
   sta APUSTATUS
@@ -16,7 +18,8 @@ bleep:
   sta SQ1HI
   rts
 
-beep:
+  .org (beep - RAMCODE)
+beep_ram:
   ; enable channel
   lda #%00000100
   sta APUSTATUS
@@ -31,7 +34,8 @@ beep:
   sta TRIHI
   rts
 
-error_sound:
+  .org (error_sound - RAMCODE)
+error_sound_ram:
   ; enable channel
   lda #%00000100
   sta APUSTATUS
@@ -46,7 +50,8 @@ error_sound:
   sta TRIHI
   rts
 
-manual_mode_sound:
+  .org (manual_mode_sound - RAMCODE)
+manual_mode_sound_ram:
   ;enable channel
   lda #%00000001
   sta APUSTATUS
@@ -64,7 +69,8 @@ manual_mode_sound:
   sta SQ1HI
   rts
 
-done_sound:
+  .org (done_sound - RAMCODE)
+done_sound_ram:
   ; enable channel
   lda #%00000001
   sta APUSTATUS
@@ -81,3 +87,4 @@ done_sound:
   lda #%11000000
   sta SQ1HI
   rts
+

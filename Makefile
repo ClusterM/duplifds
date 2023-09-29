@@ -5,10 +5,14 @@ FDSPACKER?=fdspacker
 FAMICOM_DUMPER?=famicom-dumper
 
 OUTPUT_IMAGE?=duplifds.fds
-
-SOURCE=main.asm
-SOURCE_MORE=vars.asm fds_regs.asm macroses.asm disk.asm strings.asm animation.asm askdisk.asm sounds.asm
 EXECUTABLE=duplifds.prg
+SOURCE=main.asm
+SOURCE_MORE=vars.asm fds_regs.asm macroses.asm disk.asm strings.asm animation.asm
+
+RAM_BINARY=ramcode.bin
+RAM_BINARY_CUT=ramcode_cut.bin
+RAM_SOURCE=ramcode.asm
+RAM_SOURCE_MORE=vars.asm fds_regs.asm macroses.asm  askdisk.asm sounds.asm ascii.asm
 
 BG_IMAGE=gui.png
 ASCII_IMAGE=ascii.png
@@ -42,7 +46,13 @@ $(PALETTE0) $(PALETTE1) $(PALETTE2) $(PALETTE3) \
 $(BG_NAMETABLE) $(BG_ATTR_TABLE) $(S_PATTERN) $(S_PALETTE0)
 	$(NESASM) $(SOURCE) -o $(EXECUTABLE) $(COMMIT_ARGS) --symbols=$(OUTPUT_IMAGE) -iWssr
 
-$(OUTPUT_IMAGE): $(EXECUTABLE) diskinfo.json
+$(RAM_BINARY): $(RAM_SOURCE) $(RAM_SOURCE_MORE)
+	$(NESASM) $(RAM_SOURCE) -o $(RAM_BINARY) -iWssr
+
+$(RAM_BINARY_CUT): $(RAM_BINARY) $(RAM_SOURCE_MORE)
+	dd if=$(RAM_BINARY) of=$(RAM_BINARY_CUT) bs=256 count=4
+
+$(OUTPUT_IMAGE): $(EXECUTABLE) $(RAM_BINARY_CUT) diskinfo.json
 	$(FDSPACKER) pack diskinfo.json $(OUTPUT_IMAGE)
 
  $(BG_PATTERN) $(PALETTE0) $(PALETTE1) $(PALETTE2) $(PALETTE3) $(BG_NAMETABLE) $(BG_ATTR_TABLE): $(ASCII_IMAGE) $(BG_IMAGE)

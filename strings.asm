@@ -1,9 +1,3 @@
-str_eject_disk:
-  .db "EJECT DISK", $FF
-str_insert_source_disk:
-  .db "INSERT SOURCE DISK", $FF
-str_insert_target_disk:
-  .db "INSERT TARGET DISK", $FF
 str_reading:
   .db "READING...", $FF
 str_writing:
@@ -12,8 +6,6 @@ str_checking_crc:
   .db "CHECKING CRC...", $FF
 str_done:
   .db "SUCCESS! @", $FF
-str_and_press_start:
-  .db "AND PRESS START", $FF
 str_screen_will_be_off_1:
   .db "SCREEN WILL BE...", $FF
 str_screen_will_be_off_2:
