@@ -71,7 +71,7 @@ jobs:
       uses: actions/upload-artifact@v3
       with:
         name: duplifds
-        path: ${{ OUTPUT_FILE }}
+        path: ${{ env.OUTPUT_FILE }}
   upload-to-pages:
     needs: build
     runs-on: ubuntu-latest
