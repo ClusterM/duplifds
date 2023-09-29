@@ -35,7 +35,7 @@ led_off:
   sta PPUADDR
   lda #$13
   sta PPUADDR
-  lda #$2D ; color
+  lda #$08 ; color
   sta PPUDATA
   bit PPUSTATUS
   lda #0

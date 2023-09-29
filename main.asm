@@ -44,6 +44,8 @@ load_palette:
   inx
   cpx #20
   bne .loop
+  ; change color of the LED
+  jsr led_off
 
 load_sprites:
   ; load sprites
