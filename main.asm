@@ -115,7 +115,7 @@ main:
   sta <OPERATION
   jsr ask_disk
   lda <PPU_MODE_NOW
-  beq .skip_warning
+  beq .read
   ; show warning about black screen
   printc_ptr str_screen_will_be_off_1
   ldx #90
@@ -129,26 +129,33 @@ main:
   jsr waitblank
   dex
   bne .pause2
-.skip_warning:
+
+.read:
   printc_ptr str_reading  
   jsr transfer
   ; check for errors
   lda <STOP_REASON
   cmp #STOP_NONE
-  beq .read_ok
-  jmp print_error
-.read_ok:
+  beq .write
+  jsr print_error
+  bne .read
+  jmp main
+
   ; let's write
+.write:
   lda #OPERATION_WRITING
   sta <OPERATION
   jsr ask_disk
+.writing_start
   printc_ptr str_writing
   jsr transfer
   ; check for errors
   lda <STOP_REASON
   cmp #STOP_NONE
   beq .write_ok
-  jmp print_error
+  jsr print_error
+  bne .writing_start
+  jmp main
 .write_ok:
   lda <READ_FULL
   bne .copy_done
@@ -156,6 +163,7 @@ main:
 .copy_done:
 
   ; check it  
+.verify:
   printc_ptr str_checking_crc
   lda #0
   sta <PPU_MODE_NOW
@@ -163,7 +171,9 @@ main:
   lda <STOP_REASON
   cmp #STOP_NONE
   beq .verify_ok
-  jmp print_error
+  jsr print_error
+  bne .verify
+  jmp main
 .verify_ok:
 
   jsr done_sound
@@ -174,8 +184,13 @@ main:
 wait_button_or_eject:
   ; wait until any button is pressed or disk is ejected
   jsr waitblank
-  lda JOY1_HOLD
-  ora JOY2_HOLD
+  lda <JOY1_HOLD
+  bne wait_button_or_eject
+  lda <JOY2_HOLD
+  bne wait_button_or_eject  
+  jsr waitblank
+  lda <JOY1_HOLD
+  ora <JOY2_HOLD
   bne .end
   lda FDS_DRIVE_STATUS
   and #FDS_DRIVE_STATUS_DISK_NOT_INSERTED
@@ -186,9 +201,40 @@ wait_button_or_eject:
 wait_button:
   ; wait until any button is pressed
   jsr waitblank
-  lda JOY1_HOLD
-  ora JOY2_HOLD
+  lda <JOY1_HOLD
+  bne wait_button
+  lda <JOY2_HOLD
+  bne wait_button
+  jsr waitblank
+  lda <JOY1_HOLD
+  ora <JOY2_HOLD
   beq wait_button
+  rts
+
+ask_retry_cancel:
+  printc_ptr str_ask_retry_cancel
+.wait_no_button
+  jsr waitblank
+  lda <JOY1_HOLD
+  bne .wait_no_button
+  lda <JOY2_HOLD
+  bne .wait_no_button
+.wait_button:
+  jsr waitblank
+  lda <JOY1_HOLD
+  ora <JOY2_HOLD
+  and #BTN_A
+  bne .a
+  lda <JOY1_HOLD
+  ora <JOY2_HOLD
+  and #BTN_B
+  bne .b
+  jmp .wait_button
+.a:
+  ldx #1
+  rts
+.b:
+  ldx #0
   rts
 
 print_error:
@@ -200,55 +246,61 @@ print_error:
   bne .not_crc
   printc_ptr str_err_crc_error
   jsr wait_button_or_eject
-  jmp main
+  jsr ask_retry_cancel
+  rts
 .not_crc:
   cmp #STOP_OUT_OF_MEMORY
   bne .not_out_of_memory
   printc_ptr str_err_out_of_memory
   jsr wait_button_or_eject
-  jmp main
+  ldx #0
+  rts
 .not_out_of_memory:
   cmp #STOP_NO_DISK
   bne .not_no_disk
   printc_ptr str_err_no_disk
   jsr wait_button
-  jmp main
+  jsr ask_retry_cancel
+  rts
 .not_no_disk:
   cmp #STOP_NO_POWER
   bne .not_no_power
   printc_ptr str_err_no_power
   jsr wait_button_or_eject
-  jmp main
+  jsr ask_retry_cancel
+  rts
 .not_no_power:
   cmp #STOP_END_OF_HEAD
   bne .not_end_of_head
   printc_ptr str_err_end_of_head
   jsr wait_button_or_eject
-  jmp main
+  jsr ask_retry_cancel
+  rts
 .not_end_of_head:
   cmp #STOP_WRONG_HEADER
   bne .not_wrong_header
   printc_ptr str_err_different_disk
   jsr wait_button_or_eject
-  jmp main
+  jsr ask_retry_cancel
+  rts
 .not_wrong_header:
   cmp #STOP_NOT_READY
   bne .not_not_ready
   printc_ptr str_err_not_ready
   jsr wait_button_or_eject
-  jmp main
+  jsr ask_retry_cancel
+  rts
 .not_not_ready:
   cmp #STOP_INVALID_BLOCK
   bne .not_invalid_block
   printc_ptr str_err_invalid_block
   jsr wait_button_or_eject
-  jmp main
+  jsr ask_retry_cancel
+  rts
 .not_invalid_block:
   printc_ptr str_err_unknown
   jsr wait_button_or_eject
   jmp main
-.done:
-  jsr error_sound
 
   ; delay for TIMER_COUNTER*1000 CPU cycles
 delay_sub:
