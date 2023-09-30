@@ -144,6 +144,8 @@ read_block:
 .end_delay
   ; calculate block size
   jsr calculate_block_size
+  ; set animation mode
+  jsr animation_prepare_read
   ; dummy read?
   lda #1
   ldx <BLOCK_CURRENT
@@ -203,7 +205,7 @@ read_block:
   rts
 .use_ppu_mode:
   ; we can fit the next block but using PPU memory
-  inc PPU_MODE_NEXT
+  inc <PPU_MODE_NEXT
 .memory_non_clitical:
   ; it's ok, we'll read next blocks on the next pass
   inc <BREAK_READ
@@ -237,7 +239,7 @@ read_block:
   bit PPUSTATUS
 .wait_data
   ; TODO: timeout
-  jsr animation_read
+  jsr animation
   lda <STOP_REASON
   bne .end
   lda <CRC_RESULT
@@ -466,7 +468,10 @@ write_block:
 .not_first_block:
   delay 18
 .end_delay
+  ; calculate block size
   jsr calculate_block_size
+  ; set animation mode
+  jsr animation_prepare_write
   ; need to write zero (?)
   lda #0
   sta FDS_DATA_WRITE
@@ -482,7 +487,7 @@ write_block:
   sta FDS_CONTROL
   bit PPUSTATUS
 .wait_write_end:
-  jsr animation_write
+  jsr animation
   lda <STOP_REASON
   bne .end
   lda <WRITING_DONE

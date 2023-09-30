@@ -7,10 +7,10 @@ led_on_write:
   sta PPUADDR
   lda #$16 ; color
   sta PPUDATA
-  bit PPUSTATUS
   lda #0
-  sta PPUADDR
-  sta PPUADDR
+  sta PPUCTRL
+  sta PPUSCROLL
+  sta PPUSCROLL
   rts
 
 led_on_read:
@@ -22,10 +22,10 @@ led_on_read:
   sta PPUADDR
   lda #$19 ; color
   sta PPUDATA
-  bit PPUSTATUS
   lda #0
-  sta PPUADDR
-  sta PPUADDR
+  sta PPUCTRL
+  sta PPUSCROLL
+  sta PPUSCROLL
   rts
 
 led_off:
@@ -37,10 +37,10 @@ led_off:
   sta PPUADDR
   lda #$08 ; color
   sta PPUDATA
-  bit PPUSTATUS
   lda #0
-  sta PPUADDR
-  sta PPUADDR
+  sta PPUCTRL
+  sta PPUSCROLL
+  sta PPUSCROLL
   rts
 
 write_game_name:
@@ -60,6 +60,10 @@ game_name_byte_2:
 game_name_byte_3:
   lda #$00
   sta PPUDATA
+  lda #0
+  sta PPUCTRL
+  sta PPUSCROLL
+  sta PPUSCROLL
   rts
 
 write_disk_size:
@@ -77,6 +81,10 @@ disk_number_byte:
 side_number_byte:
   lda #$00
   sta PPUDATA
+  lda #0
+  sta PPUCTRL
+  sta PPUSCROLL
+  sta PPUSCROLL
   rts
 
 precalculate_game_name:
@@ -153,6 +161,9 @@ blocks_total_byte_1:
 blocks_total_byte_2:
   lda #$00
   sta PPUDATA
+  lda #0
+  sta PPUSCROLL
+  sta PPUSCROLL
   rts
 
 write_written_block_counters:
@@ -176,6 +187,9 @@ blocks_total_byte_1b:
 blocks_total_byte_2b:
   lda #$00
   sta PPUDATA
+  lda #0
+  sta PPUSCROLL
+  sta PPUSCROLL
   rts
 
 divide10:
@@ -243,104 +257,54 @@ precalculate_block_counters:
   sta blocks_total_byte_2b + 1
   rts
 
-animation_read:
-  ; check for vblank, do not wait for it
-  lda <PPU_MODE_NOW
-  bne .end
-  ; only during data blocks (IRQ faster)
-  lda <BLOCK_CURRENT
-  cmp #2
-  bcc .end
-  and #1
-  beq .end
-  ; disable animation during PPU mode
+animation:
   bit PPUSTATUS
-  bmi .vblank
-  ; return if not vlank
-  rts
+  bpl .precalc
 .vblank:
+  ; check for vblank, do not wait for it
   inc <ANIMATION_STATE
+  lda <PPU_MODE_NOW
+  bne animation_end
+  sta <ANIM_PRECALC
+  jmp [ANIMATION_VECTOR]
+.precalc:
+  lda <ANIM_PRECALC
+  bne animation_end
   lda <ANIMATION_STATE
   and #$07
-  cmp #$00
-  bne .step_1
-  jsr led_on_read
-  jmp .end
-.step_1:
-  cmp #$01
-  bne .step_2
-  jsr write_game_name
-  jmp .end
-.step_2:
-  cmp #$02
-  bne .step_3
-  jsr write_disk_size
-  jmp .end
-.step_3:
-  cmp #$03
-  bne .step_4
-  jsr led_off
-  jmp .end
-.step_4:
-  cmp #$04
-  bne .step_5
-  jsr write_read_block_counters
-  jmp .end
-.step_5
-  cmp #$05
-  bne .end
-  jsr write_written_block_counters
-.end:
-  jsr scroll_fix
+  asl A
+  sei
+  tax
+  lda animation_vectors, x
+  sta ANIMATION_VECTOR
+  inx 
+  lda animation_vectors, x
+  sta ANIMATION_VECTOR + 1
+  cli
+  inc <ANIM_PRECALC
+  rts
+animation_vectors:
+  .dw led_on_read, write_game_name, write_disk_size, led_off
+  .dw write_read_block_counters, write_written_block_counters, animation_end, animation_end
+animation_end:
   rts
 
-animation_write:
-  ; check for vblank, do not wait for it
-  lda <PPU_MODE_NOW
-  bne .end
-  ; only during data blocks (IRQ faster)
-  lda <BLOCK_CURRENT
-  cmp #2
-  bcc .end
-  and #1
-  beq .end
-  ; disable animation during PPU mode
-  bit PPUSTATUS
-  bmi .vblank
-  ; return if not vlank
+animation_prepare_read:
+  ; we can edit animation_vectors because code in the RAM adapter's RAM
+  lda #LOW(led_on_read)
+  sta animation_vectors
+  lda #HIGH(led_on_read)
+  sta animation_vectors + 1
+  lda #0
+  sta <ANIM_PRECALC
   rts
-.vblank:
-  inc <ANIMATION_STATE
-  lda <ANIMATION_STATE
-  and #$07
-  cmp #$00
-  bne .step_1
-  jsr led_on_write
-  jmp .end
-.step_1:
-  cmp #$01
-  bne .step_2
-  jsr write_game_name
-  jmp .end
-.step_2:
-  cmp #$02
-  bne .step_3
-  jsr write_disk_size
-  jmp .end
-.step_3:
-  cmp #$03
-  bne .step_4
-  jsr led_off
-  jmp .end
-.step_4:
-  cmp #$04
-  bne .step_5
-  jsr write_read_block_counters
-  jmp .end
-.step_5
-  cmp #$05
-  bne .end
-  jsr write_written_block_counters
-.end:
-  jsr scroll_fix
+
+animation_prepare_write:
+  ; we can edit animation_vectors because code in the RAM adapter's RAM
+  lda #LOW(led_on_write)
+  sta animation_vectors
+  lda #HIGH(led_on_write)
+  sta animation_vectors + 1
+  lda #0
+  sta <ANIM_PRECALC
   rts
