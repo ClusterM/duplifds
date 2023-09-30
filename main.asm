@@ -187,14 +187,15 @@ wait_button_or_eject:
   lda <JOY1_HOLD
   bne wait_button_or_eject
   lda <JOY2_HOLD
-  bne wait_button_or_eject  
+  bne wait_button_or_eject
+.wait:
   jsr waitblank
   lda <JOY1_HOLD
   ora <JOY2_HOLD
   bne .end
   lda FDS_DRIVE_STATUS
   and #FDS_DRIVE_STATUS_DISK_NOT_INSERTED
-  beq wait_button_or_eject
+  beq .wait
 .end:
   rts
 
@@ -205,10 +206,11 @@ wait_button:
   bne wait_button
   lda <JOY2_HOLD
   bne wait_button
+.wait:
   jsr waitblank
   lda <JOY1_HOLD
   ora <JOY2_HOLD
-  beq wait_button
+  beq .wait
   rts
 
 ask_retry_cancel:
