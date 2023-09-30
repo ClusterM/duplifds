@@ -2,8 +2,9 @@
   .rsset $0000
 COPY_SOURCE_ADDR .rs 2  ; address storage for copy operations
 TEMP             .rs 2  ; just temporary memory
-JOY1_HOLD        .rs 1  ; first controller state
-JOY2_HOLD        .rs 1  ; second controller state
+JOY1_HOLD        .rs 1  ; first/third controller state ORed
+JOY2_HOLD        .rs 1  ; second/fourh controller state ORed
+JOY_BOTH_HOLD    .rs 1  ; all controllers ORed
 TIMER_COUNTER    .rs 2  ; timer counter (1 for 1000 ticks)
 BLOCK_CURRENT    .rs 1  ; number of the current block
 BLOCK_TYPE_TEST  .rs 1  ; type that _should_ be for the current block
@@ -70,16 +71,16 @@ MEMORY_PPU_END       .equ $2000
 SPACE                .equ $10
 
 ; subroutines in the RAM
-RAMCODE              .equ $0400
-waitblank            .equ $0400
-scroll_fix           .equ $0460
-printc               .equ $0480
-printc_no_vblank     .equ $0483
-print                .equ $0500
-bleep                .equ $0520
-beep                 .equ $0540
-error_sound          .equ $0560
-manual_mode_sound    .equ $0580
-done_sound           .equ $0600
-ask_disk             .equ $0640
+RAMCODE               .equ $0400
+waitblank             .equ $0400
+scroll_fix            .equ $0460
+printc                .equ $0480
+printc_no_vblank      .equ $0483
+print                 .equ $0500
+bleep                 .equ $0520
+beep                  .equ $0540
+error_sound           .equ $0560
+manual_mode_sound     .equ $0580
+done_sound            .equ $0600
+ask_disk              .equ $0640
 ascii                .equ $0780

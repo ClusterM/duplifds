@@ -184,14 +184,11 @@ main:
 wait_button_or_eject:
   ; wait until any button is pressed or disk is ejected
   jsr waitblank
-  lda <JOY1_HOLD
-  bne wait_button_or_eject
-  lda <JOY2_HOLD
+  lda <JOY_BOTH_HOLD
   bne wait_button_or_eject
 .wait:
   jsr waitblank
-  lda <JOY1_HOLD
-  ora <JOY2_HOLD
+  lda <JOY_BOTH_HOLD
   bne .end
   lda FDS_DRIVE_STATUS
   and #FDS_DRIVE_STATUS_DISK_NOT_INSERTED
@@ -202,14 +199,11 @@ wait_button_or_eject:
 wait_button_or_insert:
   ; wait until any button is pressed or disk is insertes
   jsr waitblank
-  lda <JOY1_HOLD
-  bne wait_button_or_insert
-  lda <JOY2_HOLD
+  lda <JOY_BOTH_HOLD
   bne wait_button_or_insert
 .wait:
   jsr waitblank
-  lda <JOY1_HOLD
-  ora <JOY2_HOLD
+  lda <JOY_BOTH_HOLD
   bne .end
   lda FDS_DRIVE_STATUS
   and #FDS_DRIVE_STATUS_DISK_NOT_INSERTED
@@ -221,18 +215,14 @@ ask_retry_cancel:
   printc_ptr str_ask_retry_cancel
 .wait_no_button
   jsr waitblank
-  lda <JOY1_HOLD
-  bne .wait_no_button
-  lda <JOY2_HOLD
+  lda <JOY_BOTH_HOLD
   bne .wait_no_button
 .wait_button:
   jsr waitblank
-  lda <JOY1_HOLD
-  ora <JOY2_HOLD
+  lda <JOY_BOTH_HOLD
   and #BTN_A
   bne .a
-  lda <JOY1_HOLD
-  ora <JOY2_HOLD
+  lda <JOY_BOTH_HOLD
   and #BTN_B
   bne .b
   jmp .wait_button

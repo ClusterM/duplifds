@@ -16,8 +16,7 @@ waitblank_ram:
   pha
   jsr (waitblank + (read_controller - waitblank_ram))
   ; enable manual mode if select pressed
-  lda JOY1_HOLD
-  ora JOY2_HOLD
+  lda JOY_BOTH_HOLD
   and #BTN_SELECT
   beq .no_manual
   ; already manual mode?
@@ -57,6 +56,9 @@ read_controller:
   ror <JOY2_HOLD
   dey
   bne .read_button
+  lda <JOY1_HOLD
+  ora <JOY2_HOLD
+  sta <JOY_BOTH_HOLD
   rts
 
   .org (scroll_fix - RAMCODE)
