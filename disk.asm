@@ -83,6 +83,8 @@ transfer:
   ; writing
   ; stop if BLOCKS_READ = BLOCK_CURRENT
   lda <BLOCKS_READ
+  cmp <BLOCKS_WRITTEN
+  beq .reading
   cmp <BLOCK_CURRENT
   beq .end
   ; write if BLOCK_CURRENT >= BLOCKS_WRITTEN
@@ -213,8 +215,6 @@ read_block:
 .memory_ok
   ; reset variables
   lda #0
-  sta <BLOCK_OFFSET
-  sta <BLOCK_OFFSET + 1
   sta <CRC_STATE
   sta <CRC_RESULT
   ; set IRQ vector
@@ -280,7 +280,17 @@ read_block:
   rts
 
 IRQ_disk_read:
-  pha  
+  pha
+  ; PPU mode maybe?
+  sec
+  lda <READ_OFFSET
+  sbc #(MEMORY_END & $FF)
+  lda <READ_OFFSET + 1
+  sbc #(MEMORY_END >> 8)
+  bcc .not_ppu_mode
+  pla
+  jmp IRQ_disk_read_PPU
+.not_ppu_mode:
   ; store data
   lda FDS_DATA_READ
   ; skip blocks that already read
@@ -322,28 +332,23 @@ IRQ_disk_read:
   bne .skip_inc_total_offset
   inc <READ_OFFSET + 1
 .skip_inc_total_offset
-  ; increse current block offset
-  inc <BLOCK_OFFSET
-  bne .block_offset_end
-  inc <BLOCK_OFFSET + 1
-.block_offset_end:
-  lda <BLOCK_OFFSET
-  cmp <BLOCK_SIZE
-  bne .addr_check
-  lda <BLOCK_OFFSET + 1
-  cmp <BLOCK_SIZE + 1
-  bne .addr_check
+  ; decrease bytes left counter
+  bit BLOCK_SIZE
+  bmi .neg ; check highest bit
+  dec BLOCK_SIZE
+  ; possible underflow
+  bpl .end ; not underflow
+  ; decrease hightest bit
+  dec BLOCK_SIZE + 1
+  ; TODO block size > $8000 ?
+  bpl .end ; not underflow, continue
 .data_end:
   set_IRQ IRQ_disk_read_CRC
-  jmp .end
-.addr_check
-  lda <READ_OFFSET
-  cmp #(MEMORY_END & $FF)
-  bne .end
-  lda <READ_OFFSET + 1
-  cmp #(MEMORY_END >> 8)
-  bne .end
-  set_IRQ IRQ_disk_read_PPU
+  pla
+  rti
+.neg:
+  ; value is >= $80, so there is 100% not underflow
+  dec BLOCK_SIZE
 .end:
   pla
   rti
@@ -383,26 +388,23 @@ IRQ_disk_read_PPU:
   beq .skip_parse
   jsr parse_block
 .skip_parse:
-  ; increase address offset if reading new data
-  ldx <DUMMY_READ
-  bne .skip_inc_total_offset
-  inc <READ_OFFSET
-  bne .skip_inc_total_offset
-  inc <READ_OFFSET + 1
-.skip_inc_total_offset
-  ; increse current block offset
-  inc <BLOCK_OFFSET
-  bne .block_offset_end
-  inc <BLOCK_OFFSET + 1
-.block_offset_end:
-  lda <BLOCK_OFFSET
-  cmp <BLOCK_SIZE
-  bne .end
-  lda <BLOCK_OFFSET + 1
-  cmp <BLOCK_SIZE + 1
-  bne .end
+  ; decrease bytes left counter
+  bit BLOCK_SIZE
+  bmi .neg ; check highest bit
+  dec BLOCK_SIZE
+  ; possible underflow
+  bpl .end ; not underflow
+  ; decrease hightest bit
+  dec BLOCK_SIZE + 1
+  ; TODO block size > $8000 ?
+  bpl .end ; not underflow, continue
 .data_end:
   set_IRQ IRQ_disk_read_CRC
+  pla
+  rti
+.neg:
+  ; value is >= $80, so there is 100% not underflow
+  dec BLOCK_SIZE
 .end:
   pla
   rti
@@ -478,8 +480,6 @@ write_block:
   ; reset variables
   lda #0
   sta <WRITING_DONE
-  sta <BLOCK_OFFSET
-  sta <BLOCK_OFFSET + 1
   ; set IRQ vector
   set_IRQ IRQ_disk_write
   ; start transfer, enable IRQ
@@ -567,19 +567,22 @@ IRQ_disk_write2:
   bne .total_offset_end
   inc <READ_OFFSET + 1
 .total_offset_end
-  ; increse current block offset
-  inc <BLOCK_OFFSET
-  bne .block_offset_end
-  inc <BLOCK_OFFSET + 1
-.block_offset_end:
-  lda <BLOCK_OFFSET
-  cmp <BLOCK_SIZE
-  bne .end
-  lda <BLOCK_OFFSET + 1
-  cmp <BLOCK_SIZE + 1
-  bne .end
+  ; decrease bytes left counter
+  bit BLOCK_SIZE
+  bmi .neg ; check highest bit
+  dec BLOCK_SIZE
+  ; possible underflow
+  bpl .end ; not underflow
+  ; decrease hightest bit
+  dec BLOCK_SIZE + 1
+  ; TODO block size > $8000 ?
+  bpl .end ; not underflow, continue
+.data_end:
   ; end of data
   set_IRQ IRQ_disk_write3
+.neg:
+  ; value is >= $80, so there is 100% not underflow
+  dec BLOCK_SIZE
 .end:
   pla
   rti
@@ -589,8 +592,8 @@ IRQ_disk_write2_file_amount:
   ; discard input byte  
   bit FDS_DATA_READ
   ; first or second byte?
-  lda <BLOCK_OFFSET
-  bne .second
+  lda <BLOCK_SIZE
+  beq .second
   ldx #2 ; block ID
   jmp .write_data
 .second:
@@ -616,11 +619,8 @@ IRQ_disk_write2_file_amount:
   inc <READ_OFFSET
 .total_offset_end
   ; increse current block offset
-  inc <BLOCK_OFFSET
-.block_offset_end:
-  lda <BLOCK_OFFSET
-  cmp <BLOCK_SIZE
-  bne .end
+  dec <BLOCK_SIZE
+  bpl .end
   ; end of data
   set_IRQ IRQ_disk_write3
 .end:
@@ -647,7 +647,7 @@ calculate_block_size:
   lda <BLOCK_CURRENT
   ; first block (disk header)?
   bne .file_amount_block
-  lda #56
+  lda #55
   sta <BLOCK_SIZE
   lda #1
   sta <BLOCK_TYPE_TEST
@@ -656,15 +656,16 @@ calculate_block_size:
 .file_amount_block:
   cmp #1
   bne .file_header_block
-  lda #2
+  lda #1
   sta <BLOCK_SIZE
+  lda #2
   sta <BLOCK_TYPE_TEST
   sta <BLOCK_TYPE_ACT
   rts
 .file_header_block:
   and #1
   bne .file_data_block
-  lda #16
+  lda #15
   sta <BLOCK_SIZE
   lda #3
   sta <BLOCK_TYPE_TEST
@@ -673,10 +674,8 @@ calculate_block_size:
 .file_data_block:
   clc
   lda <NEXT_FILE_SIZE
-  adc #1
   sta <BLOCK_SIZE
   lda <NEXT_FILE_SIZE + 1
-  adc #0
   sta <BLOCK_SIZE + 1
   lda #4
   sta <BLOCK_TYPE_TEST
@@ -686,7 +685,7 @@ calculate_block_size:
 parse_block:
   ; A - value
   ; X - offset
-  ldx <BLOCK_OFFSET
+  ldx <BLOCK_SIZE
   ; Y - block type
   ldy <BLOCK_TYPE_ACT
 
@@ -712,7 +711,7 @@ parse_block:
   cpy #2
   bne .not_file_amount
   ; store file amount
-  cpx #1
+  cpx #0
   ; skip if not second byte
   bne .end
   ldx <BLOCK_AMOUNT
@@ -726,12 +725,12 @@ parse_block:
   rts
 .not_file_amount:
   ; file header block?  
-  cpx #$0D
+  cpx #(15 - $0D)
   bne .not_low_size
   sta NEXT_FILE_SIZE
   rts
 .not_low_size:
-  cpx #$0E
+  cpx #(15 - $0E)
   bne .end
   sta NEXT_FILE_SIZE + 1
 .end:
