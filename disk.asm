@@ -157,7 +157,7 @@ read_block:
 .dummy_reading:  
   sta <DUMMY_READ
   ; we don't need memory check for dummy reading
-  bne .memory_ok
+  bne .memory_ok_ok
   ; check free memory
   lda <PPU_MODE_NOW
   bne .ppu_memory_calculation
@@ -180,6 +180,9 @@ read_block:
   sta <TEMP + 1
 .free_memory_calculated:
   ; now TEMP = memory left
+  ; temporary decrease BLOCK_LEFT
+  dec <BLOCK_LEFT
+  dec <BLOCK_LEFT + 1
   sec
   lda <TEMP
   sbc <BLOCK_LEFT
@@ -213,6 +216,10 @@ read_block:
   inc <BREAK_READ
   rts
 .memory_ok
+  ; restore BLOCK_LEFT
+  inc <BLOCK_LEFT
+  inc <BLOCK_LEFT + 1
+.memory_ok_ok
   ; reset variables
   lda #0
   sta <CRC_STATE
@@ -333,11 +340,10 @@ IRQ_disk_read:
   inc <DISK_OFFSET + 1
 .skip_inc_total_offset
   ; decrease bytes left counter
-  ; TODO block size > $8000 ?
   dec BLOCK_LEFT
   bne .end
   dec BLOCK_LEFT + 1
-  bpl .end ; continue if not underflow
+  bne .end ; continue if not underflow
 .data_end:
   set_IRQ IRQ_disk_read_CRC
   pla
@@ -386,7 +392,7 @@ IRQ_disk_read_PPU:
   dec BLOCK_LEFT
   bne .end
   dec BLOCK_LEFT + 1
-  bpl .end ; continue if not underflow
+  bne .end ; continue if not underflow
 .data_end:
   set_IRQ IRQ_disk_read_CRC
   pla
@@ -558,7 +564,7 @@ IRQ_disk_write2:
   dec BLOCK_LEFT
   bne .end
   dec BLOCK_LEFT + 1
-  bpl .end ; continue if not underflow
+  bne .end ; continue if not underflow
 .data_end:
   set_IRQ IRQ_disk_write3
   pla
@@ -600,10 +606,10 @@ IRQ_disk_write2_file_amount:
 .total_offset_end:
   ; decrease bytes left counter
   ; TODO block size > $8000 ?
-  dec BLOCK_LEFT
+  dec <BLOCK_LEFT
   bne .end
-  dec BLOCK_LEFT + 1
-  bpl .end ; continue if not underflow
+  dec <BLOCK_LEFT + 1
+  bne .end ; continue if not underflow
 .data_end:
   set_IRQ IRQ_disk_write3
   pla
@@ -627,7 +633,7 @@ IRQ_disk_write3:
 
 calculate_block_size:
   ; calculate block size
-  lda #0
+  lda #1
   sta <BLOCK_LEFT + 1
   lda <BLOCK_CURRENT
   ; first block (disk header)?
@@ -662,7 +668,7 @@ calculate_block_size:
   adc #1
   sta <BLOCK_LEFT
   lda <NEXT_FILE_SIZE + 1
-  adc #0
+  adc #1
   sta <BLOCK_LEFT + 1
   lda #4
   sta <BLOCK_TYPE_TEST
