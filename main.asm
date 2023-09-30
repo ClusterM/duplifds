@@ -99,6 +99,11 @@ main:
   jsr precalculate_game_name
   jsr precalculate_block_counters
   jsr waitblank
+  jsr write_game_name
+  jsr write_disk_side
+  jsr write_read_block_counters
+  jsr write_written_block_counters
+  jsr waitblank
 
 .copy_loop
   ; reading

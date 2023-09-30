@@ -66,7 +66,7 @@ game_name_byte_3:
   sta PPUSCROLL
   rts
 
-write_disk_size:
+write_disk_side:
   lda <DISK_SIDE_UPD
   beq .continue
   rts
@@ -284,7 +284,7 @@ animation:
   inc <ANIM_PRECALC
   rts
 animation_vectors:
-  .dw led_on_read, write_game_name, write_disk_size, led_off
+  .dw led_on_read, write_game_name, write_disk_side, led_off
   .dw write_read_block_counters, write_written_block_counters, animation_end, animation_end
 animation_end:
   rts

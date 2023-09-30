@@ -23,9 +23,9 @@ transfer:
 .not_ppu_mode:
   ; start address in memory
   lda #(MEMORY_START & $FF)
-  sta <READ_OFFSET
+  sta <DISK_OFFSET
   lda #((MEMORY_START >> 8) & $FF)
-  sta <READ_OFFSET + 1
+  sta <DISK_OFFSET + 1
   ; reset
   lda #(FDS_CONTROL_READ | FDS_CONTROL_MOTOR_OFF)
   sta FDS_CONTROL
@@ -119,7 +119,7 @@ transfer:
   jsr waitblank
   jsr led_off
   jsr write_game_name
-  jsr write_disk_size
+  jsr write_disk_side
   jsr waitblank
   jsr write_read_block_counters
   jsr write_written_block_counters
@@ -145,7 +145,7 @@ read_block:
   delay 9
 .end_delay
   ; calculate block size
-  jsr calculate_block_size
+  jsr calculate_BLOCK_LEFT
   ; set animation mode
   jsr animation_prepare_read
   ; dummy read?
@@ -163,43 +163,43 @@ read_block:
   bne .ppu_memory_calculation
   sec
   lda #(MEMORY_END & $FF)
-  sbc <READ_OFFSET
+  sbc <DISK_OFFSET
   sta <TEMP
   lda #((MEMORY_END >> 8) & $FF)
-  sbc <READ_OFFSET + 1
+  sbc <DISK_OFFSET + 1
   sta <TEMP + 1
   jmp .free_memory_calculated
 .ppu_memory_calculation:
   ; we have more memory if PPU mode activated now
   sec
   lda #((MEMORY_END + (MEMORY_PPU_END - MEMORY_PPU_START)) & $FF)
-  sbc <READ_OFFSET
+  sbc <DISK_OFFSET
   sta <TEMP
   lda #((MEMORY_END + (MEMORY_PPU_END - MEMORY_PPU_START)) >> 8)
-  sbc <READ_OFFSET + 1
+  sbc <DISK_OFFSET + 1
   sta <TEMP + 1
 .free_memory_calculated:
   ; now TEMP = memory left
   sec
   lda <TEMP
-  sbc <BLOCK_SIZE
+  sbc <BLOCK_LEFT
   lda <TEMP + 1
-  sbc <BLOCK_SIZE + 1
+  sbc <BLOCK_LEFT + 1
   bcs .memory_ok
   ; well, it's complicated situation
   ; lets check size of the next block
   sec
   lda #((MEMORY_END - MEMORY_START) & $FF)
-  sbc <BLOCK_SIZE
+  sbc <BLOCK_LEFT
   lda #((MEMORY_END - MEMORY_START) >> 8)
-  sbc <BLOCK_SIZE + 1
+  sbc <BLOCK_LEFT + 1
   bcs .memory_non_clitical
   ; oh, block is too large... PPU memory maybe?
   sec
   lda #(((MEMORY_END - MEMORY_START) + (MEMORY_PPU_END - MEMORY_PPU_START)) & $FF)
-  sbc <BLOCK_SIZE
+  sbc <BLOCK_LEFT
   lda #(((MEMORY_END - MEMORY_START) + (MEMORY_PPU_END - MEMORY_PPU_START)) >> 8)
-  sbc <BLOCK_SIZE + 1
+  sbc <BLOCK_LEFT + 1
   bcs .use_ppu_mode
   ; no, out of memory :(
   lda #STOP_OUT_OF_MEMORY
@@ -220,9 +220,9 @@ read_block:
   ; set IRQ vector
   ; need to determine current memory type - CPU or PPU
   sec
-  lda <READ_OFFSET
+  lda <DISK_OFFSET
   sbc #(MEMORY_END & $FF)  
-  lda <READ_OFFSET + 1
+  lda <DISK_OFFSET + 1
   sbc #(MEMORY_END >> 8)
   bcc .IRQ_set_normal
   ; PPU
@@ -283,9 +283,9 @@ IRQ_disk_read:
   pha
   ; PPU mode maybe?
   sec
-  lda <READ_OFFSET
+  lda <DISK_OFFSET
   sbc #(MEMORY_END & $FF)
-  lda <READ_OFFSET + 1
+  lda <DISK_OFFSET + 1
   sbc #(MEMORY_END >> 8)
   bcc .not_ppu_mode
   pla
@@ -297,7 +297,7 @@ IRQ_disk_read:
   ldx <DUMMY_READ
   bne .end_reading
   ldy #0
-  sta [READ_OFFSET], y
+  sta [DISK_OFFSET], y
 .end_reading:
   ; ack (is it required?)
   ldx #0
@@ -328,18 +328,18 @@ IRQ_disk_read:
   ; increase address offset if reading new data
   ldx <DUMMY_READ
   bne .skip_inc_total_offset
-  inc <READ_OFFSET
+  inc <DISK_OFFSET
   bne .skip_inc_total_offset
-  inc <READ_OFFSET + 1
+  inc <DISK_OFFSET + 1
 .skip_inc_total_offset
   ; decrease bytes left counter
-  bit BLOCK_SIZE
+  bit BLOCK_LEFT
   bmi .neg ; check highest bit
-  dec BLOCK_SIZE
+  dec BLOCK_LEFT
   ; possible underflow
   bpl .end ; not underflow
   ; decrease hightest bit
-  dec BLOCK_SIZE + 1
+  dec BLOCK_LEFT + 1
   ; TODO block size > $8000 ?
   bpl .end ; not underflow, continue
 .data_end:
@@ -348,7 +348,7 @@ IRQ_disk_read:
   rti
 .neg:
   ; value is >= $80, so there is 100% not underflow
-  dec BLOCK_SIZE
+  dec BLOCK_LEFT
 .end:
   pla
   rti
@@ -389,13 +389,13 @@ IRQ_disk_read_PPU:
   jsr parse_block
 .skip_parse:
   ; decrease bytes left counter
-  bit BLOCK_SIZE
+  bit BLOCK_LEFT
   bmi .neg ; check highest bit
-  dec BLOCK_SIZE
+  dec BLOCK_LEFT
   ; possible underflow
   bpl .end ; not underflow
   ; decrease hightest bit
-  dec BLOCK_SIZE + 1
+  dec BLOCK_LEFT + 1
   ; TODO block size > $8000 ?
   bpl .end ; not underflow, continue
 .data_end:
@@ -404,7 +404,7 @@ IRQ_disk_read_PPU:
   rti
 .neg:
   ; value is >= $80, so there is 100% not underflow
-  dec BLOCK_SIZE
+  dec BLOCK_LEFT
 .end:
   pla
   rti
@@ -471,7 +471,7 @@ write_block:
   delay 18
 .end_delay
   ; calculate block size
-  jsr calculate_block_size
+  jsr calculate_BLOCK_LEFT
   ; set animation mode
   jsr animation_prepare_write
   ; need to write zero (?)
@@ -546,16 +546,16 @@ IRQ_disk_write2:
   bit FDS_DATA_READ
   ; PPU mode?
   sec
-  lda <READ_OFFSET
+  lda <DISK_OFFSET
   sbc #(MEMORY_END & $FF)
-  lda <READ_OFFSET + 1
+  lda <DISK_OFFSET + 1
   sbc #(MEMORY_END >> 8)
   bcc .not_ppu_mode
   lda PPUDATA
   jmp .write
 .not_ppu_mode:
   ldy #0
-  lda [READ_OFFSET], y
+  lda [DISK_OFFSET], y
 .write:
   sta FDS_DATA_WRITE
   ldx <BLOCK_TYPE_ACT
@@ -563,18 +563,18 @@ IRQ_disk_write2:
   beq .skip_parse
   jsr parse_block
 .skip_parse:
-  inc <READ_OFFSET
+  inc <DISK_OFFSET
   bne .total_offset_end
-  inc <READ_OFFSET + 1
+  inc <DISK_OFFSET + 1
 .total_offset_end
   ; decrease bytes left counter
-  bit BLOCK_SIZE
+  bit BLOCK_LEFT
   bmi .neg ; check highest bit
-  dec BLOCK_SIZE
+  dec BLOCK_LEFT
   ; possible underflow
   bpl .end ; not underflow
   ; decrease hightest bit
-  dec BLOCK_SIZE + 1
+  dec BLOCK_LEFT + 1
   ; TODO block size > $8000 ?
   bpl .end ; not underflow, continue
 .data_end:
@@ -582,7 +582,7 @@ IRQ_disk_write2:
   set_IRQ IRQ_disk_write3
 .neg:
   ; value is >= $80, so there is 100% not underflow
-  dec BLOCK_SIZE
+  dec BLOCK_LEFT
 .end:
   pla
   rti
@@ -592,7 +592,7 @@ IRQ_disk_write2_file_amount:
   ; discard input byte  
   bit FDS_DATA_READ
   ; first or second byte?
-  lda <BLOCK_SIZE
+  lda <BLOCK_LEFT
   beq .second
   ldx #2 ; block ID
   jmp .write_data
@@ -616,10 +616,10 @@ IRQ_disk_write2_file_amount:
   lda <BLOCKS_WRITTEN
   cmp #1
   bne .total_offset_end
-  inc <READ_OFFSET
+  inc <DISK_OFFSET
 .total_offset_end
   ; increse current block offset
-  dec <BLOCK_SIZE
+  dec <BLOCK_LEFT
   bpl .end
   ; end of data
   set_IRQ IRQ_disk_write3
@@ -640,15 +640,15 @@ IRQ_disk_write3:
   pla
   rti
 
-calculate_block_size:
+calculate_BLOCK_LEFT:
   ; calculate block size
   lda #0
-  sta <BLOCK_SIZE + 1
+  sta <BLOCK_LEFT + 1
   lda <BLOCK_CURRENT
   ; first block (disk header)?
   bne .file_amount_block
   lda #55
-  sta <BLOCK_SIZE
+  sta <BLOCK_LEFT
   lda #1
   sta <BLOCK_TYPE_TEST
   sta <BLOCK_TYPE_ACT
@@ -657,7 +657,7 @@ calculate_block_size:
   cmp #1
   bne .file_header_block
   lda #1
-  sta <BLOCK_SIZE
+  sta <BLOCK_LEFT
   lda #2
   sta <BLOCK_TYPE_TEST
   sta <BLOCK_TYPE_ACT
@@ -666,7 +666,7 @@ calculate_block_size:
   and #1
   bne .file_data_block
   lda #15
-  sta <BLOCK_SIZE
+  sta <BLOCK_LEFT
   lda #3
   sta <BLOCK_TYPE_TEST
   sta <BLOCK_TYPE_ACT
@@ -674,9 +674,9 @@ calculate_block_size:
 .file_data_block:
   clc
   lda <NEXT_FILE_SIZE
-  sta <BLOCK_SIZE
+  sta <BLOCK_LEFT
   lda <NEXT_FILE_SIZE + 1
-  sta <BLOCK_SIZE + 1
+  sta <BLOCK_LEFT + 1
   lda #4
   sta <BLOCK_TYPE_TEST
   sta <BLOCK_TYPE_ACT
@@ -685,7 +685,7 @@ calculate_block_size:
 parse_block:
   ; A - value
   ; X - offset
-  ldx <BLOCK_SIZE
+  ldx <BLOCK_LEFT
   ; Y - block type
   ldy <BLOCK_TYPE_ACT
 
