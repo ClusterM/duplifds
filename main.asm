@@ -199,18 +199,22 @@ wait_button_or_eject:
 .end:
   rts
 
-wait_button:
-  ; wait until any button is pressed
+wait_button_or_insert:
+  ; wait until any button is pressed or disk is insertes
   jsr waitblank
   lda <JOY1_HOLD
-  bne wait_button
+  bne wait_button_or_insert
   lda <JOY2_HOLD
-  bne wait_button
+  bne wait_button_or_insert
 .wait:
   jsr waitblank
   lda <JOY1_HOLD
   ora <JOY2_HOLD
-  beq .wait
+  bne .end
+  lda FDS_DRIVE_STATUS
+  and #FDS_DRIVE_STATUS_DISK_NOT_INSERTED
+  bne .wait
+.end:
   rts
 
 ask_retry_cancel:
@@ -261,7 +265,7 @@ print_error:
   cmp #STOP_NO_DISK
   bne .not_no_disk
   printc_ptr str_err_no_disk
-  jsr wait_button
+  jsr wait_button_or_insert
   jsr ask_retry_cancel
   rts
 .not_no_disk:
