@@ -98,21 +98,21 @@ precalculate_game_name:
   cmp #2
   bcc .no_header
   ; 3-letter game code
-  lda HEADER_CACHE + $10
+  lda HEADER_CACHE + (55 - $10)
   sec
   sbc #$20
   bmi .game_code
   tax
   lda ascii, x  
   sta game_name_byte_1 + 1
-  lda HEADER_CACHE + $11
+  lda HEADER_CACHE + (55 - $11)
   sec
   sbc #$20
   bmi .game_code
   tax
   lda ascii, x  
   sta game_name_byte_2 + 1
-  lda HEADER_CACHE + $12
+  lda HEADER_CACHE + (55 - $12)
   sec
   sbc #$20
   bmi .game_code
@@ -121,12 +121,12 @@ precalculate_game_name:
   sta game_name_byte_3 + 1
 .game_code:
   ; disk number
-  lda HEADER_CACHE + $16
+  lda HEADER_CACHE + (55 - $16)
   clc
   adc #(SPACE + $11)
   sta disk_number_byte + 1
   ; side number
-  lda HEADER_CACHE + $15
+  lda HEADER_CACHE + (55 - $15)
   clc
   adc #(SPACE + $21)
   sta side_number_byte + 1
