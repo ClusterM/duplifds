@@ -145,7 +145,7 @@ read_block:
   delay 9
 .end_delay
   ; calculate block size
-  jsr calculate_BLOCK_LEFT
+  jsr calculate_block_size
   ; set animation mode
   jsr animation_prepare_read
   ; dummy read?
@@ -333,22 +333,15 @@ IRQ_disk_read:
   inc <DISK_OFFSET + 1
 .skip_inc_total_offset
   ; decrease bytes left counter
-  bit BLOCK_LEFT
-  bmi .neg ; check highest bit
-  dec BLOCK_LEFT
-  ; possible underflow
-  bpl .end ; not underflow
-  ; decrease hightest bit
-  dec BLOCK_LEFT + 1
   ; TODO block size > $8000 ?
-  bpl .end ; not underflow, continue
+  dec BLOCK_LEFT
+  bne .end
+  dec BLOCK_LEFT + 1
+  bpl .end ; continue if not underflow
 .data_end:
   set_IRQ IRQ_disk_read_CRC
   pla
   rti
-.neg:
-  ; value is >= $80, so there is 100% not underflow
-  dec BLOCK_LEFT
 .end:
   pla
   rti
@@ -389,22 +382,15 @@ IRQ_disk_read_PPU:
   jsr parse_block
 .skip_parse:
   ; decrease bytes left counter
-  bit BLOCK_LEFT
-  bmi .neg ; check highest bit
-  dec BLOCK_LEFT
-  ; possible underflow
-  bpl .end ; not underflow
-  ; decrease hightest bit
-  dec BLOCK_LEFT + 1
   ; TODO block size > $8000 ?
-  bpl .end ; not underflow, continue
+  dec BLOCK_LEFT
+  bne .end
+  dec BLOCK_LEFT + 1
+  bpl .end ; continue if not underflow
 .data_end:
   set_IRQ IRQ_disk_read_CRC
   pla
   rti
-.neg:
-  ; value is >= $80, so there is 100% not underflow
-  dec BLOCK_LEFT
 .end:
   pla
   rti
@@ -471,7 +457,7 @@ write_block:
   delay 18
 .end_delay
   ; calculate block size
-  jsr calculate_BLOCK_LEFT
+  jsr calculate_block_size
   ; set animation mode
   jsr animation_prepare_write
   ; need to write zero (?)
@@ -566,23 +552,17 @@ IRQ_disk_write2:
   inc <DISK_OFFSET
   bne .total_offset_end
   inc <DISK_OFFSET + 1
-.total_offset_end
+.total_offset_end:
   ; decrease bytes left counter
-  bit BLOCK_LEFT
-  bmi .neg ; check highest bit
-  dec BLOCK_LEFT
-  ; possible underflow
-  bpl .end ; not underflow
-  ; decrease hightest bit
-  dec BLOCK_LEFT + 1
   ; TODO block size > $8000 ?
-  bpl .end ; not underflow, continue
-.data_end:
-  ; end of data
-  set_IRQ IRQ_disk_write3
-.neg:
-  ; value is >= $80, so there is 100% not underflow
   dec BLOCK_LEFT
+  bne .end
+  dec BLOCK_LEFT + 1
+  bpl .end ; continue if not underflow
+.data_end:
+  set_IRQ IRQ_disk_write3
+  pla
+  rti
 .end:
   pla
   rti
@@ -617,12 +597,17 @@ IRQ_disk_write2_file_amount:
   cmp #1
   bne .total_offset_end
   inc <DISK_OFFSET
-.total_offset_end
-  ; increse current block offset
-  dec <BLOCK_LEFT
-  bpl .end
-  ; end of data
+.total_offset_end:
+  ; decrease bytes left counter
+  ; TODO block size > $8000 ?
+  dec BLOCK_LEFT
+  bne .end
+  dec BLOCK_LEFT + 1
+  bpl .end ; continue if not underflow
+.data_end:
   set_IRQ IRQ_disk_write3
+  pla
+  rti
 .end:
   pla
   rti
@@ -640,14 +625,14 @@ IRQ_disk_write3:
   pla
   rti
 
-calculate_BLOCK_LEFT:
+calculate_block_size:
   ; calculate block size
   lda #0
   sta <BLOCK_LEFT + 1
   lda <BLOCK_CURRENT
   ; first block (disk header)?
   bne .file_amount_block
-  lda #55
+  lda #56
   sta <BLOCK_LEFT
   lda #1
   sta <BLOCK_TYPE_TEST
@@ -656,7 +641,7 @@ calculate_BLOCK_LEFT:
 .file_amount_block:
   cmp #1
   bne .file_header_block
-  lda #1
+  lda #2
   sta <BLOCK_LEFT
   lda #2
   sta <BLOCK_TYPE_TEST
@@ -665,7 +650,7 @@ calculate_BLOCK_LEFT:
 .file_header_block:
   and #1
   bne .file_data_block
-  lda #15
+  lda #16
   sta <BLOCK_LEFT
   lda #3
   sta <BLOCK_TYPE_TEST
@@ -674,8 +659,10 @@ calculate_BLOCK_LEFT:
 .file_data_block:
   clc
   lda <NEXT_FILE_SIZE
+  adc #1
   sta <BLOCK_LEFT
   lda <NEXT_FILE_SIZE + 1
+  adc #0
   sta <BLOCK_LEFT + 1
   lda #4
   sta <BLOCK_TYPE_TEST
@@ -696,10 +683,10 @@ parse_block:
   ldy <BLOCKS_WRITTEN
   bne .compare_header
   ; store header in the permanent area
-  sta <HEADER_CACHE, x
+  sta <(HEADER_CACHE - 1), x
   rts
 .compare_header:
-  cmp <HEADER_CACHE, x  
+  cmp <(HEADER_CACHE - 1), x  
   bne .wrong_header  
   rts
 .wrong_header:
@@ -711,7 +698,7 @@ parse_block:
   cpy #2
   bne .not_file_amount
   ; store file amount
-  cpx #0
+  cpx #1
   ; skip if not second byte
   bne .end
   ldx <BLOCK_AMOUNT
@@ -725,12 +712,12 @@ parse_block:
   rts
 .not_file_amount:
   ; file header block?  
-  cpx #(15 - $0D)
+  cpx #(16 - $0D)
   bne .not_low_size
   sta NEXT_FILE_SIZE
   rts
 .not_low_size:
-  cpx #(15 - $0E)
+  cpx #(16 - $0E)
   bne .end
   sta NEXT_FILE_SIZE + 1
 .end:
