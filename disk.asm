@@ -311,11 +311,11 @@ IRQ_disk_read:
   ldx #0
   stx <BLOCK_TYPE_TEST
 .type_check_end:
-  ; parse
   ; fast check
   ldx <BLOCK_TYPE_ACT
   cpx #4
   beq .skip_parse
+  ; parse
   jsr parse_block
 .skip_parse:
   ; increase address offset if reading new data
@@ -382,11 +382,18 @@ IRQ_disk_read_PPU:
   ldx #0
   stx <BLOCK_TYPE_TEST
 .type_check_end:
-  ; parse
+  ; increase address offset if reading new data
+  ldx <DUMMY_READ
+  bne .skip_inc_total_offset
+  inc <DISK_OFFSET
+  bne .skip_inc_total_offset
+  inc <DISK_OFFSET + 1
+.skip_inc_total_offset:
   ; fast check
   ldx <BLOCK_TYPE_ACT
   cpx #4
   beq .skip_parse
+  ; parse
   jsr parse_block
 .skip_parse:
   ; decrease bytes left counter
@@ -531,7 +538,20 @@ IRQ_disk_write:
   lda <BLOCK_CURRENT
   cmp #1
   beq .file_amount
-  set_IRQ IRQ_disk_write2 
+  ; need to determine current memory type - CPU or PPU
+  sec
+  lda <DISK_OFFSET
+  sbc #(MEMORY_END & $FF)  
+  lda <DISK_OFFSET + 1
+  sbc #(MEMORY_END >> 8)
+  bcc .IRQ_set_normal
+  ; PPU
+  set_IRQ IRQ_disk_write2_PPU
+  pla
+  rti
+.IRQ_set_normal:
+  ; CPU
+  set_IRQ IRQ_disk_write2
   pla
   rti
 .file_amount:
@@ -544,19 +564,8 @@ IRQ_disk_write2:
   pha
   ; discard input byte  
   bit FDS_DATA_READ
-  ; PPU mode?
-  sec
-  lda <DISK_OFFSET
-  sbc #(MEMORY_END & $FF)
-  lda <DISK_OFFSET + 1
-  sbc #(MEMORY_END >> 8)
-  bcc .not_ppu_mode
-  lda PPUDATA
-  jmp .write
-.not_ppu_mode:
   ldy #0
   lda [DISK_OFFSET], y
-.write:
   sta FDS_DATA_WRITE
   ldx <BLOCK_TYPE_ACT
   cpx #4
@@ -573,7 +582,43 @@ IRQ_disk_write2:
   lda <DISK_OFFSET + 1
   sbc #(MEMORY_END >> 8)
   bcc .total_offset_end
-  set_IRQ IRQ_disk_read_PPU
+  set_IRQ IRQ_disk_write2_PPU
+.total_offset_end:
+  ; decrease bytes left counter
+  bit BLOCK_LEFT
+  bmi .neg ; check highest bit
+  dec BLOCK_LEFT
+  ; possible underflow
+  bpl .end ; not underflow
+  ; decrease hightest bit
+  dec BLOCK_LEFT + 1
+  ; TODO block size > $8000 ?
+  bpl .end ; not underflow, continue
+.data_end:
+  set_IRQ IRQ_disk_write3
+  pla
+  rti
+.neg:
+  ; value is >= $80, so there is 100% not underflow
+  dec BLOCK_LEFT
+.end:
+  pla
+  rti
+
+IRQ_disk_write2_PPU:
+  pha
+  ; discard input byte  
+  bit FDS_DATA_READ
+  lda PPUDATA
+  sta FDS_DATA_WRITE
+  ldx <BLOCK_TYPE_ACT
+  cpx #4
+  beq .skip_parse
+  jsr parse_block
+.skip_parse:
+  inc <DISK_OFFSET
+  bne .total_offset_end
+  inc <DISK_OFFSET + 1
 .total_offset_end:
   ; decrease bytes left counter
   bit BLOCK_LEFT

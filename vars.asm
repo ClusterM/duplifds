@@ -63,7 +63,7 @@ OPERATION_WRITING    .equ 1
 
 ; memory regions
 MEMORY_START         .equ $6000
-MEMORY_END           .equ $D500
+MEMORY_END           .equ $D400
 MEMORY_PPU_START     .equ $1000
 MEMORY_PPU_END       .equ $2000
 
@@ -83,4 +83,4 @@ error_sound           .equ $0560
 manual_mode_sound     .equ $0580
 done_sound            .equ $0600
 ask_disk              .equ $0640
-ascii                .equ $0780
+ascii                 .equ $0780
