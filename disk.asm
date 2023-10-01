@@ -269,9 +269,12 @@ read_block:
   beq .end_of_disk_check
   cmp #STOP_CRC_ERROR
   beq .end_of_disk_check
+  cmp #STOP_OUT_OF_MEMORY
+  beq .end_of_disk_check
   rts  
 .end_of_disk_check:
-  ; bad CRC or bad block
+  ; ingnore bad CRC or bad block
+  ; if we are read all visible files
   lda <BLOCK_CURRENT
   cmp #2
   bcc .error
