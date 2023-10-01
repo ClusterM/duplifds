@@ -8,7 +8,7 @@
   .dw Start
   .dw IRQ_none
 
-  .org $D500  ; code starts at $D500
+  .org $D400  ; code starts at $D400
 Start:
   ; disable PPU
   lda #%00000000

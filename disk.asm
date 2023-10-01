@@ -157,7 +157,7 @@ read_block:
 .dummy_reading:  
   sta <DUMMY_READ
   ; we don't need memory check for dummy reading
-  bne .memory_ok_ok
+  bne .memory_ok
   ; check free memory
   lda <PPU_MODE_NOW
   bne .ppu_memory_calculation
@@ -180,9 +180,6 @@ read_block:
   sta <TEMP + 1
 .free_memory_calculated:
   ; now TEMP = memory left
-  ; temporary decrease BLOCK_LEFT
-  dec <BLOCK_LEFT
-  dec <BLOCK_LEFT + 1
   sec
   lda <TEMP
   sbc <BLOCK_LEFT
@@ -215,11 +212,7 @@ read_block:
   ; it's ok, we'll read next blocks on the next pass
   inc <BREAK_READ
   rts
-.memory_ok
-  ; restore BLOCK_LEFT
-  inc <BLOCK_LEFT
-  inc <BLOCK_LEFT + 1
-.memory_ok_ok
+.memory_ok:
   ; reset variables
   lda #0
   sta <CRC_STATE
@@ -341,14 +334,22 @@ IRQ_disk_read:
   set_IRQ IRQ_disk_read_PPU
 .skip_inc_total_offset
   ; decrease bytes left counter
+  bit BLOCK_LEFT
+  bmi .neg ; check highest bit
   dec BLOCK_LEFT
-  bne .end
+  ; possible underflow
+  bpl .end ; not underflow
+  ; decrease hightest bit
   dec BLOCK_LEFT + 1
-  bne .end ; continue if not underflow
+  ; TODO block size > $8000 ?
+  bpl .end ; not underflow, continue
 .data_end:
   set_IRQ IRQ_disk_read_CRC
   pla
   rti
+.neg:
+  ; value is >= $80, so there is 100% not underflow
+  dec BLOCK_LEFT
 .end:
   pla
   rti
@@ -389,14 +390,22 @@ IRQ_disk_read_PPU:
   jsr parse_block
 .skip_parse:
   ; decrease bytes left counter
+  bit BLOCK_LEFT
+  bmi .neg ; check highest bit
   dec BLOCK_LEFT
-  bne .end
+  ; possible underflow
+  bpl .end ; not underflow
+  ; decrease hightest bit
   dec BLOCK_LEFT + 1
-  bne .end ; continue if not underflow
+  ; TODO block size > $8000 ?
+  bpl .end ; not underflow, continue
 .data_end:
   set_IRQ IRQ_disk_read_CRC
   pla
   rti
+.neg:
+  ; value is >= $80, so there is 100% not underflow
+  dec BLOCK_LEFT
 .end:
   pla
   rti
@@ -557,16 +566,32 @@ IRQ_disk_write2:
   inc <DISK_OFFSET
   bne .total_offset_end
   inc <DISK_OFFSET + 1
+  ; PPU mode maybe?
+  sec
+  lda <DISK_OFFSET
+  sbc #(MEMORY_END & $FF)
+  lda <DISK_OFFSET + 1
+  sbc #(MEMORY_END >> 8)
+  bcc .total_offset_end
+  set_IRQ IRQ_disk_read_PPU
 .total_offset_end:
   ; decrease bytes left counter
+  bit BLOCK_LEFT
+  bmi .neg ; check highest bit
   dec BLOCK_LEFT
-  bne .end
+  ; possible underflow
+  bpl .end ; not underflow
+  ; decrease hightest bit
   dec BLOCK_LEFT + 1
-  bne .end ; continue if not underflow
+  ; TODO block size > $8000 ?
+  bpl .end ; not underflow, continue
 .data_end:
   set_IRQ IRQ_disk_write3
   pla
   rti
+.neg:
+  ; value is >= $80, so there is 100% not underflow
+  dec BLOCK_LEFT
 .end:
   pla
   rti
@@ -577,7 +602,6 @@ IRQ_disk_write2_file_amount:
   bit FDS_DATA_READ
   ; first or second byte?
   lda <BLOCK_LEFT
-  cmp #1
   beq .second
   ldx #2 ; block ID
   jmp .write_data
@@ -604,14 +628,22 @@ IRQ_disk_write2_file_amount:
   inc <DISK_OFFSET
 .total_offset_end:
   ; decrease bytes left counter
-  dec <BLOCK_LEFT
-  bne .end
-  dec <BLOCK_LEFT + 1
-  bne .end ; continue if not underflow
+  bit BLOCK_LEFT
+  bmi .neg ; check highest bit
+  dec BLOCK_LEFT
+  ; possible underflow
+  bpl .end ; not underflow
+  ; decrease hightest bit
+  dec BLOCK_LEFT + 1
+  ; TODO block size > $8000 ?
+  bpl .end ; not underflow, continue
 .data_end:
   set_IRQ IRQ_disk_write3
   pla
   rti
+.neg:
+  ; value is >= $80, so there is 100% not underflow
+  dec BLOCK_LEFT
 .end:
   pla
   rti
@@ -631,12 +663,12 @@ IRQ_disk_write3:
 
 calculate_block_size:
   ; calculate block size
-  lda #1
+  lda #0
   sta <BLOCK_LEFT + 1
   lda <BLOCK_CURRENT
   ; first block (disk header)?
   bne .file_amount_block
-  lda #56
+  lda #55
   sta <BLOCK_LEFT
   lda #1
   sta <BLOCK_TYPE_TEST
@@ -645,7 +677,7 @@ calculate_block_size:
 .file_amount_block:
   cmp #1
   bne .file_header_block
-  lda #2
+  lda #1
   sta <BLOCK_LEFT
   lda #2
   sta <BLOCK_TYPE_TEST
@@ -654,19 +686,16 @@ calculate_block_size:
 .file_header_block:
   and #1
   bne .file_data_block
-  lda #16
+  lda #15
   sta <BLOCK_LEFT
   lda #3
   sta <BLOCK_TYPE_TEST
   sta <BLOCK_TYPE_ACT
   rts
 .file_data_block:
-  clc
   lda <NEXT_FILE_SIZE
-  adc #1
   sta <BLOCK_LEFT
   lda <NEXT_FILE_SIZE + 1
-  adc #1
   sta <BLOCK_LEFT + 1
   lda #4
   sta <BLOCK_TYPE_TEST
@@ -687,10 +716,10 @@ parse_block:
   ldy <BLOCKS_READ
   bne .compare_header
   ; store header in the permanent area
-  sta <(HEADER_CACHE - 1), x
+  sta <HEADER_CACHE, x
   rts
 .compare_header:
-  cmp <(HEADER_CACHE - 1), x  
+  cmp <HEADER_CACHE, x  
   bne .wrong_header  
   rts
 .wrong_header:
@@ -704,7 +733,7 @@ parse_block:
   cpy #2
   bne .not_file_amount
   ; store file amount
-  cpx #1
+  cpx #0
   ; skip if not second byte
   bne .end
   ldx <BLOCK_AMOUNT
@@ -718,12 +747,12 @@ parse_block:
   rts
 .not_file_amount:
   ; file header block?  
-  cpx #(16 - $0D)
+  cpx #(15 - $0D)
   bne .not_low_size
   sta NEXT_FILE_SIZE
   rts
 .not_low_size:
-  cpx #(16 - $0E)
+  cpx #(15 - $0E)
   bne .end
   sta NEXT_FILE_SIZE + 1
 .end:
