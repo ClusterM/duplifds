@@ -291,16 +291,6 @@ read_block:
 
 IRQ_disk_read:
   pha
-  ; PPU mode maybe?
-  sec
-  lda <DISK_OFFSET
-  sbc #(MEMORY_END & $FF)
-  lda <DISK_OFFSET + 1
-  sbc #(MEMORY_END >> 8)
-  bcc .not_ppu_mode
-  pla
-  jmp IRQ_disk_read_PPU
-.not_ppu_mode:
   ; store data
   lda FDS_DATA_READ
   ; skip blocks that already read
@@ -341,6 +331,14 @@ IRQ_disk_read:
   inc <DISK_OFFSET
   bne .skip_inc_total_offset
   inc <DISK_OFFSET + 1
+  ; PPU mode maybe?
+  sec
+  lda <DISK_OFFSET
+  sbc #(MEMORY_END & $FF)
+  lda <DISK_OFFSET + 1
+  sbc #(MEMORY_END >> 8)
+  bcc .skip_inc_total_offset
+  set_IRQ IRQ_disk_read_PPU
 .skip_inc_total_offset
   ; decrease bytes left counter
   dec BLOCK_LEFT
@@ -391,7 +389,6 @@ IRQ_disk_read_PPU:
   jsr parse_block
 .skip_parse:
   ; decrease bytes left counter
-  ; TODO block size > $8000 ?
   dec BLOCK_LEFT
   bne .end
   dec BLOCK_LEFT + 1
@@ -562,7 +559,6 @@ IRQ_disk_write2:
   inc <DISK_OFFSET + 1
 .total_offset_end:
   ; decrease bytes left counter
-  ; TODO block size > $8000 ?
   dec BLOCK_LEFT
   bne .end
   dec BLOCK_LEFT + 1
@@ -688,7 +684,7 @@ parse_block:
   cpy #1
   bne .not_header  
   ; cache or compare?
-  ldy <BLOCKS_WRITTEN
+  ldy <BLOCKS_READ
   bne .compare_header
   ; store header in the permanent area
   sta <(HEADER_CACHE - 1), x
