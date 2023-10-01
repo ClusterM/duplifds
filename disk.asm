@@ -517,7 +517,6 @@ IRQ_disk_write:
   pha
   ; discard input byte
   bit FDS_DATA_READ
-  lda <WRITING_DONE
   lda #$80
   sta FDS_DATA_WRITE
   lda <BLOCK_CURRENT
@@ -579,6 +578,7 @@ IRQ_disk_write2_file_amount:
   bit FDS_DATA_READ
   ; first or second byte?
   lda <BLOCK_LEFT
+  cmp #1
   beq .second
   ldx #2 ; block ID
   jmp .write_data
@@ -605,7 +605,6 @@ IRQ_disk_write2_file_amount:
   inc <DISK_OFFSET
 .total_offset_end:
   ; decrease bytes left counter
-  ; TODO block size > $8000 ?
   dec <BLOCK_LEFT
   bne .end
   dec <BLOCK_LEFT + 1
@@ -696,6 +695,8 @@ parse_block:
   bne .wrong_header  
   rts
 .wrong_header:
+  lda #(FDS_CONTROL_READ | FDS_CONTROL_MOTOR_ON)
+  sta FDS_CONTROL
   lda #STOP_WRONG_HEADER
   sta STOP_REASON
   rts
