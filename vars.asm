@@ -5,6 +5,7 @@ TEMP             .rs 2  ; just temporary memory
 JOY1_HOLD        .rs 1  ; first/third controller state ORed
 JOY2_HOLD        .rs 1  ; second/fourh controller state ORed
 JOY_BOTH_HOLD    .rs 1  ; all controllers ORed
+JOY_BOTH_LAST    .rs 1  ; all controllers ORed - last value
 TIMER_COUNTER    .rs 2  ; timer counter (1 for 1000 ticks)
 BLOCK_CURRENT    .rs 1  ; number of the current block
 BLOCK_TYPE_TEST  .rs 1  ; type that _should_ be for the current block
@@ -73,9 +74,9 @@ SPACE                .equ $10
 ; subroutines in the RAM
 RAMCODE               .equ $0400
 waitblank             .equ $0400
-scroll_fix            .equ $0460
-printc                .equ $0480
-printc_no_vblank      .equ $0483
+scroll_fix            .equ $0480
+printc                .equ $04A0
+printc_no_vblank      .equ $04A3
 print                 .equ $0500
 bleep                 .equ $0520
 beep                  .equ $0540

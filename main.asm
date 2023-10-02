@@ -84,6 +84,7 @@ print_commit:
 
   lda #0
   sta MANUAL_MODE
+  sta JOY_BOTH_LAST
 
   cli ; enable interrupts
 

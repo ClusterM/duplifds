@@ -15,17 +15,7 @@ waitblank_ram:
   tya
   pha
   jsr (waitblank + (read_controller - waitblank_ram))
-  ; enable manual mode if select pressed
-  lda JOY_BOTH_HOLD
-  and #BTN_SELECT
-  beq .no_manual
-  ; already manual mode?
-  lda MANUAL_MODE
-  bne .no_manual
-  lda #1
-  sta MANUAL_MODE
-  jsr manual_mode_sound
-.no_manual:
+  jsr (waitblank + (parse_buttons - waitblank_ram))
   jsr scroll_fix
   bit PPUSTATUS
 .loop:
@@ -37,7 +27,38 @@ waitblank_ram:
   tax
   pla
   rts
-  
+
+parse_buttons:
+  ; enable manual mode if select pressed
+  lda <JOY_BOTH_HOLD
+  cmp <JOY_BOTH_LAST
+  beq .no_buttons_action
+  sta <JOY_BOTH_LAST
+  and #BTN_SELECT
+  beq .no_manual
+  ; already manual mode?
+  lda MANUAL_MODE
+  bne .no_manual
+  lda #1
+  sta MANUAL_MODE
+  jsr manual_mode_sound
+.no_manual:
+  lda <JOY_BOTH_HOLD
+  and #BTN_B
+  beq .normal_reset
+  lda #$35
+  sta RESET_FLAG
+  lda #$53
+  sta RESET_TYPE
+  jmp (waitblank + (.reset_end - waitblank_ram))
+.normal_reset:
+  lda #0
+  sta RESET_FLAG
+  sta RESET_TYPE
+.reset_end:
+.no_buttons_action:
+  rts
+
 read_controller:
   ; read controller
   lda #1
