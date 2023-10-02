@@ -3,6 +3,8 @@ Famicom Disk System copier. Just an open source alternative for Disk Hacker/Disk
 
 ![image](https://github.com/ClusterM/duplifds/assets/4236181/9f52a426-2f7d-4f4e-a05d-eb1aad8ef14d)
 
+**Please do not use this software for piracy! It's for backing up your legal games only! Or for transferring your physical disks to FDSKey.**
+
 ## How to use
 1. Start this application from disk or FDSKey.
 2. Insert source disk (physical or emulated).
