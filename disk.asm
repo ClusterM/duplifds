@@ -53,8 +53,21 @@ transfer:
   sta FDS_CONTROL  
   lda #0
   sta <BLOCK_CURRENT
+  ; init timeout
+  lda #0
+  sta <TIMEOUT
+  sta <TIMEOUT + 1
+  sta <TIMEOUT + 2
+  ; wait for ready state
 .not_ready_yet:
-  ; TODO: add timeout
+  ; check timeout
+  jsr check_timeout
+  bne .not_timeout
+  ; timeout :(
+  lda #STOP_TIMEOUT_READY
+  sta <STOP_REASON
+  jmp .end
+.not_timeout:
   ; check if disk removed
   lda FDS_DRIVE_STATUS
   and #FDS_DRIVE_STATUS_DISK_NOT_INSERTED
@@ -64,8 +77,6 @@ transfer:
   sta <STOP_REASON
   jmp .end
 .disk_inserted1:  
-  ; wait for ready state
-  ; TODO: timeout
   lda FDS_DRIVE_STATUS
   and #FDS_DRIVE_STATUS_DISK_NOT_READY
   bne .not_ready_yet
@@ -250,13 +261,25 @@ read_block:
   ; CPU
   set_IRQ IRQ_disk_read
 .reading_start:
+  ; init timeout
+  lda #0
+  sta <TIMEOUT
+  sta <TIMEOUT + 1
+  sta <TIMEOUT + 2
   ; start reading
   lda #(FDS_CONTROL_READ | FDS_CONTROL_MOTOR_ON | FDS_CONTROL_TRANSFER_ON | FDS_CONTROL_IRQ_ON)
   sta FDS_CONTROL
   ; wait for data
   bit PPUSTATUS
-.wait_data
-  ; TODO: timeout
+.wait_data:
+  ; check timeout
+  jsr check_timeout
+  bne .not_timeout
+  ; timeout :(
+  lda #STOP_TIMEOUT_READ
+  sta <STOP_REASON
+  jmp .end
+.not_timeout:
   jsr animation
   lda <STOP_REASON
   bne .end
@@ -475,7 +498,7 @@ write_block:
   jmp .end_delay
 .not_first_block:
   delay 18
-.end_delay
+.end_delay:
   ; calculate block size
   jsr calculate_block_size
   ; set animation mode
@@ -488,16 +511,29 @@ write_block:
   sta <WRITING_DONE
   ; set IRQ vector
   set_IRQ IRQ_disk_write
+  ; init timeout
+  lda #0
+  sta <TIMEOUT
+  sta <TIMEOUT + 1
+  sta <TIMEOUT + 2
   ; start transfer, enable IRQ
   lda #(FDS_CONTROL_WRITE | FDS_CONTROL_MOTOR_ON | FDS_CONTROL_TRANSFER_ON | FDS_CONTROL_IRQ_ON)
   sta FDS_CONTROL
   bit PPUSTATUS
-.wait_write_end:
+.wait_write:
+  ; check timeout
+  jsr check_timeout
+  bne .not_timeout
+  ; timeout :(
+  lda #STOP_TIMEOUT_WRITE
+  sta <STOP_REASON
+  jmp .end
+.not_timeout:
   jsr animation
   lda <STOP_REASON
   bne .end
   lda <WRITING_DONE
-  beq .wait_write_end
+  beq .wait_write
   ; wait while CRC is writing
   ldx #$B2
 .write_CRC_wait:
@@ -773,3 +809,15 @@ parse_block:
   sta NEXT_FILE_SIZE + 1
 .end:
   rts  
+
+check_timeout:
+  ; check timeout
+  inc <TIMEOUT
+  bne .end
+  inc <TIMEOUT + 1
+  bne .end
+  inc <TIMEOUT + 2
+  lda <TIMEOUT + 2
+  cmp #TIMEOUT_VALUE
+.end:
+  rts

@@ -7,6 +7,7 @@ JOY2_HOLD        .rs 1  ; second/fourh controller state ORed
 JOY_BOTH_HOLD    .rs 1  ; all controllers ORed
 JOY_BOTH_LAST    .rs 1  ; all controllers ORed - last value
 TIMER_COUNTER    .rs 2  ; timer counter (1 for 1000 ticks)
+TIMEOUT          .rs 3  ; timeout counter
 BLOCK_CURRENT    .rs 1  ; number of the current block
 BLOCK_TYPE_TEST  .rs 1  ; type that _should_ be for the current block
 BLOCK_TYPE_ACT   .rs 1  ; type the current block
@@ -40,6 +41,8 @@ HEADER_CACHE     .rs 56 ; cached disk header
 SPRITES          .rs 256
 
 ; constants
+TIMEOUT_VALUE    .equ 10
+
 BTN_A            .equ $01
 BTN_B            .equ $02
 BTN_SELECT       .equ $04
@@ -58,13 +61,16 @@ STOP_END_OF_HEAD     .equ 5
 STOP_WRONG_HEADER    .equ 6
 STOP_NOT_READY       .equ 7
 STOP_INVALID_BLOCK   .equ 8
+STOP_TIMEOUT_READY   .equ 9
+STOP_TIMEOUT_READ    .equ 10
+STOP_TIMEOUT_WRITE   .equ 11
 
 OPERATION_READING    .equ 0
 OPERATION_WRITING    .equ 1
 
 ; memory regions
 MEMORY_START         .equ $6000
-MEMORY_END           .equ $D400
+MEMORY_END           .equ $D300
 MEMORY_PPU_START     .equ $1000
 MEMORY_PPU_END       .equ $2000
 

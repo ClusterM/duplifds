@@ -28,5 +28,11 @@ str_err_different_disk:
   .db "ERR:DIFFERENT DISK", $FF
 str_err_not_ready:
   .db "ERR:NOT READY", $FF
+str_err_timeout_ready:
+  .db "ERR:READY TIMEOUT", $FF  
+str_err_timeout_read:
+  .db "ERR:READ TIMEOUT", $FF  
+str_err_timeout_write:
+  .db "ERR:WRITE TIMEOUT", $FF  
 str_err_unknown:
   .db "UNKNOWN ERROR", $FF

@@ -8,7 +8,7 @@
   .dw Start
   .dw IRQ_none
 
-  .org $D400  ; code starts at $D400
+  .org $D300  ; code starts at $D300
 Start:
   ; disable PPU
   lda #%00000000
@@ -242,7 +242,7 @@ print_error:
   cmp #STOP_CRC_ERROR
   bne .not_crc
   printc_ptr str_err_crc_error
-  jsr print_cullent_block_number
+  jsr print_current_block_number
   jsr wait_button_or_eject
   jsr ask_retry_cancel
   rts
@@ -292,16 +292,37 @@ print_error:
   cmp #STOP_INVALID_BLOCK
   bne .not_invalid_block
   printc_ptr str_err_invalid_block
-  jsr print_cullent_block_number
+  jsr print_current_block_number
   jsr wait_button_or_eject
   jsr ask_retry_cancel
   rts
 .not_invalid_block:
+  cmp #STOP_TIMEOUT_READY
+  bne .not_timeout_ready
+  printc_ptr str_err_timeout_ready
+  jsr wait_button_or_eject
+  jsr ask_retry_cancel
+  rts
+.not_timeout_ready:
+  cmp #STOP_TIMEOUT_READ
+  bne .not_timeout_read
+  printc_ptr str_err_timeout_read
+  jsr wait_button_or_eject
+  jsr ask_retry_cancel
+  rts
+.not_timeout_read:
+  cmp #STOP_TIMEOUT_WRITE
+  bne .not_timeout_write
+  printc_ptr str_err_timeout_write
+  jsr wait_button_or_eject
+  jsr ask_retry_cancel
+  rts
+.not_timeout_write:
   printc_ptr str_err_unknown
   jsr wait_button_or_eject
   jmp main
 
-print_cullent_block_number:
+print_current_block_number:
   PPU_to 22, 17
   lda BLOCK_CURRENT
   jsr divide10
