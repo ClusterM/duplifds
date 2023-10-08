@@ -169,20 +169,6 @@ main:
   jsr wait_button_or_eject
   jmp main
 
-divide10:
-  ; input: a - dividend 
-  ; output: a - remainder, x = quotient
-  ldx #0
-.div_loop:
-  cmp #10
-  bcc .done
-  sec
-  sbc #10
-  inx
-  jmp .div_loop
-.done:
-  rts
-
   ; delay for TIMER_COUNTER*1000 CPU cycles
 delay_sub:
   set_IRQ IRQ_delay

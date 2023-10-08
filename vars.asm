@@ -90,4 +90,5 @@ ask_disk             .equ $0520
 wait_button_or_eject .equ $0650
 wait_button_or_ins   .equ $0670
 ask_retry_cancel     .equ $0690
+divide10             .equ $06D0
 ascii                .equ $0780

@@ -200,3 +200,18 @@ ask_retry_cancel_ram:
   rts
 .str_ask_retry_cancel:
   .db "A-RETRY   B-CANCEL"
+
+  .org (divide10 - RAMCODE)
+divide10_ram:
+  ; input: a - dividend 
+  ; output: a - remainder, x = quotient
+  ldx #0
+.div_loop:
+  cmp #10
+  bcc .done
+  sec
+  sbc #10
+  inx
+  bne .div_loop
+.done:
+  rts
