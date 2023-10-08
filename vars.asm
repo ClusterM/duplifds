@@ -23,7 +23,7 @@ STOP_REASON      .rs 1  ; read/write stop reason
 BREAK_READ       .rs 1  ; flag to stop blocks reading
 BLOCKS_READ      .rs 1  ; amount of blocks read
 BLOCKS_WRITTEN   .rs 1  ; amount of blocks written
-DUMMY_READ       .rs 1
+DUMMY_READ       .rs 1  ; flag that we are reading but not storing data
 WRITING_DONE     .rs 1  ; current state of writing
 READ_FULL        .rs 1  ; non-zero when source disk reading is fully completed
 MANUAL_MODE      .rs 1  ; flag that manual disk insert mode enabled
@@ -31,7 +31,6 @@ ANIMATION_STATE  .rs 1  ; animation state
 ANIMATION_VECTOR .rs 2  ; animation scheduled function
 PPU_MODE_NEXT    .rs 1  ; flag that we must use PPU mode on the next pass
 PPU_MODE_NOW     .rs 1  ; flag that we must use PPU mode on the current pass
-ANIM_PRECALC     .rs 1  ; is next animation address precalculated?
 GAME_NAME_UPD    .rs 1  ; flag that game name text updated on the screen
 DISK_SIDE_UPD    .rs 1  ; flag that disk side text updated on the screen
 READ_CNT_UPD     .rs 1  ; flag that read block amount updated on the screen

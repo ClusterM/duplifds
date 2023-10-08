@@ -109,6 +109,8 @@ transfer:
 .writing:
   jsr write_block
 .block_end:
+  jsr precalculate_game_name
+  jsr precalculate_block_counters
   ; break if need to break
   lda <BREAK_READ
   bne .end
@@ -157,8 +159,8 @@ read_block:
 .end_delay
   ; calculate block size
   jsr calculate_block_size
-  ; set animation mode
-  jsr animation_prepare_read
+  ; init animation
+  jsr animation_init
   ; dummy read?
   lda #1
   ldx <BLOCK_CURRENT
@@ -295,8 +297,6 @@ read_block:
   cmp <BLOCKS_READ
   bcc .end
   sta <BLOCKS_READ
-  jsr precalculate_game_name
-  jsr precalculate_block_counters
 .end:
   lda <STOP_REASON
   cmp #STOP_INVALID_BLOCK
@@ -501,8 +501,8 @@ write_block:
 .end_delay:
   ; calculate block size
   jsr calculate_block_size
-  ; set animation mode
-  jsr animation_prepare_write
+  ; init animation
+  jsr animation_init
   ; need to write zero (?)
   lda #0
   sta FDS_DATA_WRITE
@@ -555,11 +555,9 @@ write_block:
   lda <BLOCKS_WRITTEN
   cmp #1
   beq .inc_block
-  jmp .skip_inc
+  bne .end
 .inc_block:
   inc <BLOCKS_WRITTEN
-.skip_inc:
-  jsr precalculate_block_counters
 .end:
   rts
 

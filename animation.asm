@@ -1,53 +1,34 @@
-led_on_write:
+; step 0
+led_on:
   ; turn LED ON - writing
   bit PPUSTATUS
   lda #$3F
   sta PPUADDR
   lda #$13
   sta PPUADDR
-  lda #$16 ; color
+  lda <OPERATION
+  cmp #OPERATION_WRITING
+  bne .reading
+  lda #$16 ; write color
+  bne .done
+.reading:
+  lda #$19 ; read color
+.done:
   sta PPUDATA
   lda #0
   sta PPUCTRL
   sta PPUSCROLL
   sta PPUSCROLL
+  lda #LOW(write_game_name)
+  sta <ANIMATION_VECTOR
+  lda #HIGH(write_game_name)
+  sta <ANIMATION_VECTOR + 1
   rts
 
-led_on_read:
-  ; turn LED ON - reading
-  bit PPUSTATUS
-  lda #$3F
-  sta PPUADDR
-  lda #$13
-  sta PPUADDR
-  lda #$19 ; color
-  sta PPUDATA
-  lda #0
-  sta PPUCTRL
-  sta PPUSCROLL
-  sta PPUSCROLL
-  rts
-
-led_off:
-  ; turn LED OFF
-  bit PPUSTATUS
-  lda #$3F
-  sta PPUADDR
-  lda #$13
-  sta PPUADDR
-  lda #$08 ; color
-  sta PPUDATA
-  lda #0
-  sta PPUCTRL
-  sta PPUSCROLL
-  sta PPUSCROLL
-  rts
-
+; step 1
 write_game_name:
   lda <GAME_NAME_UPD
-  beq .continue
-  rts
-.continue:
+  bne write_game_name_end
   inc <GAME_NAME_UPD
   ; write game code
   PPU_to 10, 19
@@ -64,13 +45,17 @@ game_name_byte_3:
   sta PPUCTRL
   sta PPUSCROLL
   sta PPUSCROLL
+write_game_name_end:
+  lda #LOW(write_disk_side)
+  sta <ANIMATION_VECTOR
+  lda #HIGH(write_disk_side)
+  sta <ANIMATION_VECTOR + 1
   rts
 
+; step 2
 write_disk_side:
   lda <DISK_SIDE_UPD
-  beq .continue
-  rts
-.continue:
+  bne write_disk_side_end
   inc <DISK_SIDE_UPD
   ; write side
   PPU_to 21, 19
@@ -85,66 +70,37 @@ side_number_byte:
   sta PPUCTRL
   sta PPUSCROLL
   sta PPUSCROLL
+write_disk_side_end:
+  lda #LOW(led_off)
+  sta <ANIMATION_VECTOR
+  lda #HIGH(led_off)
+  sta <ANIMATION_VECTOR + 1
   rts
 
-precalculate_game_name:
-  ; prepare write_game_name to update text during vblank
-  ; all FDS code is located in the RAM,
-  ; so we can patch it on the fly :>
+; step 3
+led_off:
+  ; turn LED OFF
+  bit PPUSTATUS
+  lda #$3F
+  sta PPUADDR
+  lda #$13
+  sta PPUADDR
+  lda #$08 ; color
+  sta PPUDATA
   lda #0
-  sta GAME_NAME_UPD
-  sta DISK_SIDE_UPD
-  lda <BLOCKS_READ
-  cmp #2
-  bcc .no_header
-  ; 3-letter game code
-  lda HEADER_CACHE + (55 - $10)
-  sec
-  sbc #$20
-  bmi .game_code
-  tax
-  lda ascii, x  
-  sta game_name_byte_1 + 1
-  lda HEADER_CACHE + (55 - $11)
-  sec
-  sbc #$20
-  bmi .game_code
-  tax
-  lda ascii, x  
-  sta game_name_byte_2 + 1
-  lda HEADER_CACHE + (55 - $12)
-  sec
-  sbc #$20
-  bmi .game_code
-  tax
-  lda ascii, x
-  sta game_name_byte_3 + 1
-.game_code:
-  ; disk number
-  lda HEADER_CACHE + (55 - $16)
-  clc
-  adc #(SPACE + $11)
-  sta disk_number_byte + 1
-  ; side number
-  lda HEADER_CACHE + (55 - $15)
-  clc
-  adc #(SPACE + $21)
-  sta side_number_byte + 1
-  rts
-.no_header:
-  lda #SPACE
-  sta game_name_byte_1 + 1
-  sta game_name_byte_2 + 1
-  sta game_name_byte_3 + 1
-  sta disk_number_byte + 1
-  sta side_number_byte + 1
+  sta PPUCTRL
+  sta PPUSCROLL
+  sta PPUSCROLL
+  lda #LOW(write_read_block_counters)
+  sta <ANIMATION_VECTOR
+  lda #HIGH(write_read_block_counters)
+  sta <ANIMATION_VECTOR + 1
   rts
 
+; step 4
 write_read_block_counters:
   lda <READ_CNT_UPD
-  beq .continue
-  rts
-.continue:
+  bne write_read_block_counters_end
   inc <READ_CNT_UPD
   ; write block counters
   PPU_to 8, 21
@@ -164,13 +120,17 @@ blocks_total_byte_2:
   lda #0
   sta PPUSCROLL
   sta PPUSCROLL
+write_read_block_counters_end:
+  lda #LOW(write_written_block_counters)
+  sta <ANIMATION_VECTOR
+  lda #HIGH(write_written_block_counters)
+  sta <ANIMATION_VECTOR + 1
   rts
 
+; step 5
 write_written_block_counters:
   lda <WRITTEN_CNT_UPD
-  beq .continue
-  rts
-.continue:
+  bne write_written_block_counters_end
   inc <WRITTEN_CNT_UPD
   ; write block counters
   PPU_to 19, 21
@@ -190,6 +150,82 @@ blocks_total_byte_2b:
   lda #0
   sta PPUSCROLL
   sta PPUSCROLL
+write_written_block_counters_end:
+  lda #LOW(animation_step_6)
+  sta <ANIMATION_VECTOR
+  lda #HIGH(animation_step_6)
+  sta <ANIMATION_VECTOR + 1
+  rts
+
+animation_step_6:
+  lda #LOW(animation_step_7)
+  sta <ANIMATION_VECTOR
+  lda #HIGH(animation_step_7)
+  sta <ANIMATION_VECTOR + 1
+  rts
+
+animation_step_7:
+  lda #LOW(led_on)
+  sta <ANIMATION_VECTOR
+  lda #HIGH(led_on)
+  sta <ANIMATION_VECTOR + 1
+  rts
+
+precalculate_game_name:
+  ; prepare write_game_name to update text during vblank
+  ; all FDS code is located in the RAM,
+  ; so we can patch it on the fly :>
+  lda <BLOCKS_READ
+  cmp #0
+  bne .not_0
+  lda #SPACE
+  sta game_name_byte_1 + 1
+  sta game_name_byte_2 + 1
+  sta game_name_byte_3 + 1
+  sta disk_number_byte + 1
+  sta side_number_byte + 1
+  jmp .done
+.not_0:
+  cmp #1
+  bne .end
+  ; 3-letter game code
+  lda HEADER_CACHE + (55 - $10)
+  sec
+  sbc #$20
+  bmi .disk_number
+  tax
+  lda ascii, x  
+  sta game_name_byte_1 + 1
+  lda HEADER_CACHE + (55 - $11)
+  sec
+  sbc #$20
+  bmi .disk_number
+  tax
+  lda ascii, x  
+  sta game_name_byte_2 + 1
+  lda HEADER_CACHE + (55 - $12)
+  sec
+  sbc #$20
+  bmi .disk_number
+  tax
+  lda ascii, x
+  sta game_name_byte_3 + 1
+  ; disk number
+.disk_number:
+  lda HEADER_CACHE + (55 - $16)
+  clc
+  adc #(SPACE + $11)
+  sta disk_number_byte + 1
+  ; side number
+  lda HEADER_CACHE + (55 - $15)
+  clc
+  adc #(SPACE + $21)
+  sta side_number_byte + 1
+.done:
+  lda #0
+  sta <GAME_NAME_UPD
+  sta <DISK_SIDE_UPD
+.end:
   rts
 
 precalculate_block_counters:
@@ -245,52 +281,19 @@ precalculate_block_counters:
 
 animation:
   bit PPUSTATUS
-  bpl .precalc
+  bpl .end
 .vblank:
   ; check for vblank, do not wait for it
-  inc <ANIMATION_STATE
   lda <PPU_MODE_NOW
-  bne animation_end
-  sta <ANIM_PRECALC
+  bne .end
   jmp [ANIMATION_VECTOR]
-.precalc:
-  lda <ANIM_PRECALC
-  bne animation_end
-  lda <ANIMATION_STATE
-  and #$07
-  asl A
-  sei
-  tax
-  lda animation_vectors, x
-  sta ANIMATION_VECTOR
-  inx 
-  lda animation_vectors, x
-  sta ANIMATION_VECTOR + 1
-  cli
-  inc <ANIM_PRECALC
-  rts
-animation_vectors:
-  .dw led_on_read, write_game_name, write_disk_side, led_off
-  .dw write_read_block_counters, write_written_block_counters, animation_end, animation_end
-animation_end:
+.end:
   rts
 
-animation_prepare_read:
+animation_init:
   ; we can edit animation_vectors because code in the RAM adapter's RAM
-  lda #LOW(led_on_read)
-  sta animation_vectors
-  lda #HIGH(led_on_read)
-  sta animation_vectors + 1
-  lda #0
-  sta <ANIM_PRECALC
-  rts
-
-animation_prepare_write:
-  ; we can edit animation_vectors because code in the RAM adapter's RAM
-  lda #LOW(led_on_write)
-  sta animation_vectors
-  lda #HIGH(led_on_write)
-  sta animation_vectors + 1
-  lda #0
-  sta <ANIM_PRECALC
+  lda #LOW(led_on)
+  sta <ANIMATION_VECTOR
+  lda #HIGH(led_on)
+  sta <ANIMATION_VECTOR + 1
   rts
