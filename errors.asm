@@ -84,7 +84,7 @@ print_error:
 .not_timeout_write:
   printc_ptr str_err_unknown
   jsr wait_button_or_eject
-  jmp main
+  rts
 
 print_current_block_number:
   PPU_to 22, 17
