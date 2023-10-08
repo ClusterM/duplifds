@@ -7,7 +7,7 @@ FAMICOM_DUMPER?=famicom-dumper
 OUTPUT_IMAGE?=duplifds.fds
 EXECUTABLE=duplifds.prg
 SOURCE=main.asm
-SOURCE_MORE=vars.asm fds_regs.asm macroses.asm disk.asm strings.asm animation.asm
+SOURCE_MORE=vars.asm fds_regs.asm macroses.asm disk.asm strings.asm animation.asm errors.h
 
 RAM_BINARY=ramcode.bin
 RAM_BINARY_CUT=ramcode_cut.bin
