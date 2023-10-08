@@ -36,8 +36,8 @@ DISK_SIDE_UPD    .rs 1  ; flag that disk side text updated on the screen
 READ_CNT_UPD     .rs 1  ; flag that read block amount updated on the screen
 WRITTEN_CNT_UPD  .rs 1  ; flag that written block amount updated on the screen
 HEADER_CACHE     .rs 56 ; cached disk header
-  .rsset $0300
-SPRITES          .rs 256
+  .rsset $0200
+SPRITES          .rs $100
 
 ; constants
 ; button codes
@@ -75,16 +75,16 @@ TIMEOUT_VALUE        .equ 10
 ; first character (space) tile id
 SPACE                .equ $10
 ; subroutines in the RAM
-RAMCODE              .equ $0400
-waitblank            .equ $0400
-scroll_fix           .equ $0480
-printc               .equ $04A0
-printc_no_vblank     .equ $04A3
-print                .equ $0500
-bleep                .equ $0520
-beep                 .equ $0540
-error_sound          .equ $0560
-manual_mode_sound    .equ $0580
-done_sound           .equ $0600
-ask_disk             .equ $0640
+RAMCODE              .equ $0300
+waitblank            .equ $0300
+scroll_fix           .equ $0380
+printc               .equ $03A0
+printc_no_vblank     .equ $03A3
+print                .equ $0400
+bleep                .equ $0420
+beep                 .equ $0440
+error_sound          .equ $0460
+manual_mode_sound    .equ $0480
+done_sound           .equ $0500
+ask_disk             .equ $0540
 ascii                .equ $0780

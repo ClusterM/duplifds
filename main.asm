@@ -48,19 +48,6 @@ load_palette:
   jsr led_off
 
 load_sprites:
-  ; load sprites
-  ldy #0
-.loop:
-  lda sprites, y
-  sta SPRITES, y
-  iny
-  cpy #(sprites_end - sprites)
-  bne .loop
-  lda #$FF
-.blank_loop:
-  sta SPRITES, y
-  iny
-  bne .blank_loop  
   lda #0 
   sta OAMADDR
   lda #HIGH(SPRITES)
@@ -410,14 +397,6 @@ palette:
   .incbin "palette2.bin"
   .incbin "palette3.bin"
   .incbin "spalette0.bin"
-
-sprites:
-  ; X, tile #, attributes, Y
-  .db 88, $F0, %00100000, 223
-  .db 92, $F1, %00100000, 149 + 8*0
-  .db 92, $F1, %00100000, 149 + 8*1
-  .db 92, $F1, %00100000, 149 + 8*2 
-sprites_end:
 
   .ifdef COMMIT
 commit:

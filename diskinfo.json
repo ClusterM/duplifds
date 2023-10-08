@@ -17,7 +17,7 @@
       "actual_disk_side": "A",
       "disk_type_other": "YellowDisk",
       "disk_version": "$00",
-      "file_amount": 8,
+      "file_amount": 9,
       "files": [
         {
           "file_number": "0",
@@ -31,7 +31,7 @@
           "file_number": "1",
           "file_indicate_code": "0",
           "file_name": "RAMCODE",
-          "file_address": "$0400",
+          "file_address": "$0300",
           "file_kind": "Program",
           "data": "ramcode_cut.bin"
         },
@@ -66,9 +66,17 @@
           "file_address": "$23C0",
           "file_kind": "NameTable",
           "data": "bg_attr_table.bin"
-        },        
+        },
         {
           "file_number": "6",
+          "file_indicate_code": "0",
+          "file_name": "SPRITES",
+          "file_address": "$0200",
+          "file_kind": "Program",
+          "data": "sprites_cut.bin"
+        },
+        {
+          "file_number": "7",
           "file_indicate_code": "0",
           "file_name": "NOLICENS",
           "file_address": "$2000",
@@ -76,7 +84,7 @@
           "data": "no_license.prg"
         },
         {
-          "file_number": "7",
+          "file_number": "8",
           "file_indicate_code": "0",
           "file_name": "DUMMYDAT",
           "file_address": "$0200",

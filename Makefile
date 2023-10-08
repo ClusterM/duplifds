@@ -14,6 +14,10 @@ RAM_BINARY_CUT=ramcode_cut.bin
 RAM_SOURCE=ramcode.asm
 RAM_SOURCE_MORE=vars.asm fds_regs.asm macroses.asm  askdisk.asm sounds.asm ascii.asm
 
+SPRITES_BINARY=sprites.bin
+SPRITES_BINARY_CUT=sprites_cut.bin
+SPRITES_SOURCE=sprites.asm
+
 BG_IMAGE=gui.png
 ASCII_IMAGE=ascii.png
 
@@ -49,10 +53,16 @@ $(BG_NAMETABLE) $(BG_ATTR_TABLE) $(S_PATTERN) $(S_PALETTE0)
 $(RAM_BINARY): $(RAM_SOURCE) $(RAM_SOURCE_MORE)
 	$(NESASM) $(RAM_SOURCE) -o $(RAM_BINARY) -iWssr
 
-$(RAM_BINARY_CUT): $(RAM_BINARY) $(RAM_SOURCE_MORE)
-	dd if=$(RAM_BINARY) of=$(RAM_BINARY_CUT) bs=256 count=4
+$(RAM_BINARY_CUT): $(RAM_BINARY)
+	dd if=$(RAM_BINARY) of=$(RAM_BINARY_CUT) bs=256 count=5
 
-$(OUTPUT_IMAGE): $(EXECUTABLE) $(RAM_BINARY_CUT) diskinfo.json
+$(SPRITES_BINARY): $(SPRITES_SOURCE)
+	$(NESASM) $(SPRITES_SOURCE) -o $(SPRITES_BINARY) -iWssr
+
+$(SPRITES_BINARY_CUT): $(SPRITES_BINARY)
+	dd if=$(SPRITES_BINARY) of=$(SPRITES_BINARY_CUT) bs=256 count=1
+
+$(OUTPUT_IMAGE): $(EXECUTABLE) $(RAM_BINARY_CUT) $(SPRITES_BINARY_CUT) diskinfo.json
 	$(FDSPACKER) pack --header diskinfo.json $(OUTPUT_IMAGE)
 
  $(BG_PATTERN) $(PALETTE0) $(PALETTE1) $(PALETTE2) $(PALETTE3) $(BG_NAMETABLE) $(BG_ATTR_TABLE): $(ASCII_IMAGE) $(BG_IMAGE)
