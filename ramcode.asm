@@ -143,3 +143,60 @@ print_ram:
   bne .loop
 .end:
   rts
+
+  .org (wait_button_or_eject - RAMCODE)
+wait_button_or_eject_ram:
+  ; wait until any button is pressed or disk is ejected
+  jsr waitblank
+  lda <JOY_BOTH_HOLD
+  bne wait_button_or_eject_ram
+.wait:
+  jsr waitblank
+  lda <JOY_BOTH_HOLD
+  bne .end
+  lda FDS_DRIVE_STATUS
+  and #FDS_DRIVE_STATUS_DISK_NOT_INSERTED
+  beq .wait
+.end:
+  rts
+
+  .org (wait_button_or_ins - RAMCODE)
+wait_button_or_insert_ram:
+  ; wait until any button is pressed or disk is insertes
+  jsr waitblank
+  lda <JOY_BOTH_HOLD
+  bne wait_button_or_insert_ram
+.wait:
+  jsr waitblank
+  lda <JOY_BOTH_HOLD
+  bne .end
+  lda FDS_DRIVE_STATUS
+  and #FDS_DRIVE_STATUS_DISK_NOT_INSERTED
+  bne .wait
+.end:
+  rts
+
+  .org (ask_retry_cancel - RAMCODE)
+ask_retry_cancel_ram:
+  printc_ptr (ask_retry_cancel + (.str_ask_retry_cancel - ask_retry_cancel_ram))
+.wait_no_button
+  jsr waitblank
+  lda <JOY_BOTH_HOLD
+  bne .wait_no_button
+.wait_button:
+  jsr waitblank
+  lda <JOY_BOTH_HOLD
+  and #BTN_A
+  bne .a
+  lda <JOY_BOTH_HOLD
+  and #BTN_B
+  bne .b
+  beq .wait_button
+.a:
+  ldx #1
+  rts
+.b:
+  ldx #0
+  rts
+.str_ask_retry_cancel:
+  .db "A-RETRY   B-CANCEL"

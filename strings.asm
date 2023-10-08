@@ -10,8 +10,6 @@ str_screen_will_be_off_1:
   .db "SCREEN WILL BE...", $FF
 str_screen_will_be_off_2:
   .db "BLANK, DON'T WORRY", $FF
-str_ask_retry_cancel:
-  .db "A-RETRY   B-CANCEL"
 str_err_crc_error:
   .db "ERR:CRC ON BLK #", $FF
 str_err_invalid_block:

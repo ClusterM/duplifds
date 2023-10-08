@@ -169,58 +169,6 @@ main:
   jsr wait_button_or_eject
   jmp main
 
-wait_button_or_eject:
-  ; wait until any button is pressed or disk is ejected
-  jsr waitblank
-  lda <JOY_BOTH_HOLD
-  bne wait_button_or_eject
-.wait:
-  jsr waitblank
-  lda <JOY_BOTH_HOLD
-  bne .end
-  lda FDS_DRIVE_STATUS
-  and #FDS_DRIVE_STATUS_DISK_NOT_INSERTED
-  beq .wait
-.end:
-  rts
-
-wait_button_or_insert:
-  ; wait until any button is pressed or disk is insertes
-  jsr waitblank
-  lda <JOY_BOTH_HOLD
-  bne wait_button_or_insert
-.wait:
-  jsr waitblank
-  lda <JOY_BOTH_HOLD
-  bne .end
-  lda FDS_DRIVE_STATUS
-  and #FDS_DRIVE_STATUS_DISK_NOT_INSERTED
-  bne .wait
-.end:
-  rts
-
-ask_retry_cancel:
-  printc_ptr str_ask_retry_cancel
-.wait_no_button
-  jsr waitblank
-  lda <JOY_BOTH_HOLD
-  bne .wait_no_button
-.wait_button:
-  jsr waitblank
-  lda <JOY_BOTH_HOLD
-  and #BTN_A
-  bne .a
-  lda <JOY_BOTH_HOLD
-  and #BTN_B
-  bne .b
-  jmp .wait_button
-.a:
-  ldx #1
-  rts
-.b:
-  ldx #0
-  rts
-
 print_error:
   jsr error_sound
   jsr waitblank
@@ -244,7 +192,7 @@ print_error:
   cmp #STOP_NO_DISK
   bne .not_no_disk
   printc_ptr str_err_no_disk
-  jsr wait_button_or_insert
+  jsr wait_button_or_ins
   jsr ask_retry_cancel
   rts
 .not_no_disk:
