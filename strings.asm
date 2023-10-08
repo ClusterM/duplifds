@@ -13,9 +13,9 @@ str_screen_will_be_off_2:
 str_ask_retry_cancel:
   .db "A-RETRY   B-CANCEL"
 str_err_crc_error:
-  .db "ERR:CRC MISMATCH", $FF
+  .db "ERR:CRC ON BLK #", $FF
 str_err_invalid_block:
-  .db "ERR:INVALID BLOCK", $FF
+  .db "ERR:BAD ID BLK #", $FF
 str_err_out_of_memory:
   .db "ERR:OUT OF MEMORY", $FF
 str_err_no_disk:

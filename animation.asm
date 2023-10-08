@@ -192,20 +192,6 @@ blocks_total_byte_2b:
   sta PPUSCROLL
   rts
 
-divide10:
-  ; input: a - dividend 
-  ; output: a - remainder, x = quotient
-  ldx #0
-.div_loop:
-  cmp #10
-  bcc .done
-  sec
-  sbc #10
-  inx
-  jmp .div_loop
-.done:
-  rts
-
 precalculate_block_counters:
   ; prepare write_block_counters to update text during vblank
   ; all FDS code is located in the RAM,

@@ -242,6 +242,7 @@ print_error:
   cmp #STOP_CRC_ERROR
   bne .not_crc
   printc_ptr str_err_crc_error
+  jsr print_cullent_block_number
   jsr wait_button_or_eject
   jsr ask_retry_cancel
   rts
@@ -291,6 +292,7 @@ print_error:
   cmp #STOP_INVALID_BLOCK
   bne .not_invalid_block
   printc_ptr str_err_invalid_block
+  jsr print_cullent_block_number
   jsr wait_button_or_eject
   jsr ask_retry_cancel
   rts
@@ -298,6 +300,35 @@ print_error:
   printc_ptr str_err_unknown
   jsr wait_button_or_eject
   jmp main
+
+print_cullent_block_number:
+  PPU_to 22, 17
+  lda BLOCK_CURRENT
+  jsr divide10
+  pha
+  txa
+  clc
+  adc #(SPACE + $10)
+  sta PPUDATA
+  pla
+  clc
+  adc #(SPACE + $10)
+  sta PPUDATA
+  rts
+
+divide10:
+  ; input: a - dividend 
+  ; output: a - remainder, x = quotient
+  ldx #0
+.div_loop:
+  cmp #10
+  bcc .done
+  sec
+  sbc #10
+  inx
+  jmp .div_loop
+.done:
+  rts
 
   ; delay for TIMER_COUNTER*1000 CPU cycles
 delay_sub:
