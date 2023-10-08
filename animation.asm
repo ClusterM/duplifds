@@ -15,10 +15,7 @@ led_on:
   lda #$19 ; read color
 .done:
   sta PPUDATA
-  lda #0
-  sta PPUCTRL
-  sta PPUSCROLL
-  sta PPUSCROLL
+  jsr scroll_fix
   lda #LOW(write_game_name)
   sta <ANIMATION_VECTOR
   lda #HIGH(write_game_name)
@@ -41,10 +38,7 @@ game_name_byte_2:
 game_name_byte_3:
   lda #$00
   sta PPUDATA
-  lda #0
-  sta PPUCTRL
-  sta PPUSCROLL
-  sta PPUSCROLL
+  jsr scroll_fix
 write_game_name_end:
   lda #LOW(write_disk_side)
   sta <ANIMATION_VECTOR
@@ -66,10 +60,7 @@ disk_number_byte:
 side_number_byte:
   lda #$00
   sta PPUDATA
-  lda #0
-  sta PPUCTRL
-  sta PPUSCROLL
-  sta PPUSCROLL
+  jsr scroll_fix
 write_disk_side_end:
   lda #LOW(led_off)
   sta <ANIMATION_VECTOR
@@ -87,10 +78,7 @@ led_off:
   sta PPUADDR
   lda #$08 ; color
   sta PPUDATA
-  lda #0
-  sta PPUCTRL
-  sta PPUSCROLL
-  sta PPUSCROLL
+  jsr scroll_fix
   lda #LOW(write_read_block_counters)
   sta <ANIMATION_VECTOR
   lda #HIGH(write_read_block_counters)
