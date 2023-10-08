@@ -2,24 +2,8 @@ transfer:
   lda #0
   sta <STOP_REASON
   sta <BREAK_READ
-  lda <PPU_MODE_NOW
-  beq .not_ppu_mode
-  ; disable rendering
-  lda #%00000000
-  sta PPUMASK
-  jsr waitblank
-  bit PPUSTATUS
-  lda #(MEMORY_PPU_START >> 8)
-  sta PPUADDR
-  lda #(MEMORY_PPU_START & $FF)
-  sta PPUADDR
-  ; TODO: change screen color?
-  lda <OPERATION
-  cmp #OPERATION_WRITING
-  bne .not_ppu_mode
-  ; discarding byte when writing
-  lda PPUDATA
-.not_ppu_mode:
+  ; disable rendering if need
+  jsr blank_screen_on
   ; start address in memory
   lda #(MEMORY_START & $FF)
   sta <DISK_OFFSET
@@ -136,14 +120,7 @@ transfer:
   jsr waitblank
   jsr write_read_block_counters
   jsr write_written_block_counters
-  jsr waitblank
-  lda #0 
-  sta OAMADDR
-  lda #HIGH(SPRITES)
-  sta OAMDMA
-  jsr waitblank
-  lda #%00011110
-  sta PPUMASK
+  jsr blank_screen_off
   jsr waitblank
   rts
 
@@ -818,4 +795,87 @@ check_timeout:
   lda <TIMEOUT + 2
   cmp #TIMEOUT_VALUE
 .end:
+  rts
+
+blank_screen_on:
+  lda <PPU_MODE_NOW
+  beq .end
+  ; disable rendering
+  jsr waitblank
+  ; scroll
+.scroll_loop:
+  ldx #8
+.multi_loop:
+  inc <Y_OFFSET
+  dec SPRITES + (4 * 0) + 0
+  dec SPRITES + (4 * 1) + 0
+  dec SPRITES + (4 * 2) + 0
+  dec SPRITES + (4 * 3) + 0
+  dex
+  bne .multi_loop
+  lda SPRITES + (4 * 0) + 0
+  cmp #192
+  bcc .sprites_on
+  lda #%00001010
+  sta PPUMASK
+.sprites_on:
+  lda #0 
+  sta OAMADDR
+  lda #HIGH(SPRITES)
+  sta OAMDMA
+  jsr waitblank
+  lda <Y_OFFSET
+  cmp #240
+  bne .scroll_loop
+  ; blank screen
+  lda #%00000000
+  sta PPUMASK
+  jsr waitblank
+  bit PPUSTATUS
+  lda #(MEMORY_PPU_START >> 8)
+  sta PPUADDR
+  lda #(MEMORY_PPU_START & $FF)
+  sta PPUADDR
+  ; TODO: change screen color?
+  lda <OPERATION
+  cmp #OPERATION_WRITING
+  bne .end
+  ; discarding byte when writing
+  lda PPUDATA
+.end
+  rts
+
+blank_screen_off:
+  lda <PPU_MODE_NOW
+  beq .end
+  ; enable rendering without sprites
+  jsr waitblank
+  lda #%00001010
+  sta PPUMASK  
+  ; scroll
+.scroll_loop:
+  ldx #8
+.multi_loop:
+  dec <Y_OFFSET
+  inc SPRITES + (4 * 0) + 0
+  inc SPRITES + (4 * 1) + 0
+  inc SPRITES + (4 * 2) + 0
+  inc SPRITES + (4 * 3) + 0
+  dex
+  bne .multi_loop
+  lda SPRITES + (4 * 0) + 0
+  cmp #240
+  bcc .sprites_off
+  ; turn on sprites
+  lda #%00011110
+  sta PPUMASK
+.sprites_off:
+  lda #0 
+  sta OAMADDR
+  lda #HIGH(SPRITES)
+  sta OAMDMA
+  jsr waitblank
+  lda <Y_OFFSET
+  bne .scroll_loop
+.end
   rts

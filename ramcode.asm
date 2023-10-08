@@ -86,12 +86,20 @@ read_controller:
 scroll_fix_ram:
   ; fix scrolling
   pha
-  lda #%00000000
-  sta PPUCTRL
   bit PPUSTATUS
   lda #0
   sta PPUSCROLL
+  lda <Y_OFFSET
   sta PPUSCROLL
+  cmp #240
+  bne .first_screen
+  lda #%00000010
+  sta PPUCTRL
+  pla
+  rts
+.first_screen:
+  lda #%00000000
+  sta PPUCTRL
   pla
   rts
 

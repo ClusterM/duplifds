@@ -1,5 +1,5 @@
   ; sprites data
-  ; X, tile #, attributes, Y
+  ; Y, tile #, attributes, X
   .db 88, $F0, %00100000, 223
   .db 92, $F1, %00100000, 149 + 8*0
   .db 92, $F1, %00100000, 149 + 8*1

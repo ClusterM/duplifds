@@ -14,6 +14,7 @@ Start:
   lda #%00000000
   sta PPUCTRL
   sta PPUMASK
+  sta <Y_OFFSET
   ; warm-up
   jsr waitblank
   jsr waitblank 

@@ -2,6 +2,7 @@
   .rsset $0000
 COPY_SOURCE_ADDR .rs 2  ; address storage for copy operations
 TEMP             .rs 2  ; just temporary memory
+Y_OFFSET         .rs 1  ; vertical scroll offset
 JOY1_HOLD        .rs 1  ; first/third controller state ORed
 JOY2_HOLD        .rs 1  ; second/fourh controller state ORed
 JOY_BOTH_HOLD    .rs 1  ; all controllers ORed

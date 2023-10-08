@@ -19,6 +19,7 @@ SPRITES_BINARY_CUT=sprites_cut.bin
 SPRITES_SOURCE=sprites.asm
 
 BG_IMAGE=gui.png
+BG2_IMAGE=blank.png
 ASCII_IMAGE=ascii.png
 
 PALETTE0=palette0.bin
@@ -28,6 +29,8 @@ PALETTE3=palette3.bin
 BG_PATTERN=bg_pattern_table.bin
 BG_NAMETABLE=bg_nametable.bin
 BG_ATTR_TABLE=bg_attr_table.bin
+BG2_NAMETABLE=bg2_nametable.bin
+BG2_ATTR_TABLE=bg2_attr_table.bin
 
 S_PRITES=sprites.png
 S_PATTERN=spr_pattern_table.bin
@@ -47,7 +50,9 @@ build: $(OUTPUT_IMAGE)
 
 $(EXECUTABLE): $(SOURCE) $(SOURCE_MORE) $(BG_PATTERN) \
 $(PALETTE0) $(PALETTE1) $(PALETTE2) $(PALETTE3) \
-$(BG_NAMETABLE) $(BG_ATTR_TABLE) $(S_PATTERN) $(S_PALETTE0)
+$(BG_NAMETABLE) $(BG_NAMETABLE) $(BG_ATTR_TABLE) \
+$(BG2_NAMETABLE) $(BG2_NAMETABLE) $(BG2_ATTR_TABLE) \
+$(S_PATTERN) $(S_PALETTE0)
 	$(NESASM) $(SOURCE) -o $(EXECUTABLE) $(COMMIT_ARGS) --symbols=$(OUTPUT_IMAGE) -iWssr
 
 $(RAM_BINARY): $(RAM_SOURCE) $(RAM_SOURCE_MORE)
@@ -65,8 +70,10 @@ $(SPRITES_BINARY_CUT): $(SPRITES_BINARY)
 $(OUTPUT_IMAGE): $(EXECUTABLE) $(RAM_BINARY_CUT) $(SPRITES_BINARY_CUT) diskinfo.json
 	$(FDSPACKER) pack --header diskinfo.json $(OUTPUT_IMAGE)
 
- $(BG_PATTERN) $(PALETTE0) $(PALETTE1) $(PALETTE2) $(PALETTE3) $(BG_NAMETABLE) $(BG_ATTR_TABLE): $(ASCII_IMAGE) $(BG_IMAGE)
-	$(TILER) -i0 $(ASCII_IMAGE) -i1 $(BG_IMAGE) \
+ $(BG_PATTERN) $(BG_NAMETABLE) $(BG_ATTR_TABLE) \
+ $(BG2_NAMETABLE) $(BG2_ATTR_TABLE) \
+ $(PALETTE0) $(PALETTE1) $(PALETTE2) $(PALETTE3): $(ASCII_IMAGE) $(BG_IMAGE) $(BG2_IMAGE)
+	$(TILER) -i0 $(ASCII_IMAGE) -i1 $(BG_IMAGE) -i2 $(BG2_IMAGE) \
 	--bg-color \#000000 --share-pattern-table \
 	--pattern-offset 16 \
 	--palette-0 \#c4c4c4,\#008088,\#005000 \
@@ -79,7 +86,9 @@ $(OUTPUT_IMAGE): $(EXECUTABLE) $(RAM_BINARY_CUT) $(SPRITES_BINARY_CUT) diskinfo.
 	--out-palette-2 $(PALETTE2) \
 	--out-palette-3 $(PALETTE3) \
 	--out-name-table-1 $(BG_NAMETABLE) \
-	--out-attribute-table-1 $(BG_ATTR_TABLE)
+	--out-attribute-table-1 $(BG_ATTR_TABLE) \
+	--out-name-table-2 $(BG2_NAMETABLE) \
+	--out-attribute-table-2 $(BG2_ATTR_TABLE)
 
 $(S_PATTERN) $(S_PALETTE0): $(S_PRITES)
 	$(TILER) -i0 $(S_PRITES) \
