@@ -34,7 +34,7 @@ transfer:
   ; check power
   lda #$FF
   sta FDS_EXT_WRITE
-  delay 5
+  delay 200
   lda FDS_EXT_READ
   and #$80
   bne .battery_ok
@@ -47,6 +47,7 @@ transfer:
   ; reset
   lda #(FDS_CONTROL_READ | FDS_CONTROL_MOTOR_OFF)
   sta FDS_CONTROL
+  delay 200
   ; start motor
   lda #(FDS_CONTROL_READ | FDS_CONTROL_MOTOR_ON)
   sta FDS_CONTROL  
