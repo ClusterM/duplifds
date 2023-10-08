@@ -40,17 +40,16 @@ HEADER_CACHE     .rs 56 ; cached disk header
 SPRITES          .rs 256
 
 ; constants
-TIMEOUT_VALUE    .equ 10
-
-BTN_A            .equ $01
-BTN_B            .equ $02
-BTN_SELECT       .equ $04
-BTN_START        .equ $08
-BTN_UP           .equ $10
-BTN_DOWN         .equ $20
-BTN_LEFT         .equ $40
-BTN_RIGHT        .equ $80
-
+; button codes
+BTN_A                .equ $01
+BTN_B                .equ $02
+BTN_SELECT           .equ $04
+BTN_START            .equ $08
+BTN_UP               .equ $10
+BTN_DOWN             .equ $20
+BTN_LEFT             .equ $40
+BTN_RIGHT            .equ $80
+; result codes
 STOP_NONE            .equ 0
 STOP_CRC_ERROR       .equ 1
 STOP_OUT_OF_MEMORY   .equ 2
@@ -63,30 +62,29 @@ STOP_INVALID_BLOCK   .equ 8
 STOP_TIMEOUT_READY   .equ 9
 STOP_TIMEOUT_READ    .equ 10
 STOP_TIMEOUT_WRITE   .equ 11
-
+; operation codes
 OPERATION_READING    .equ 0
 OPERATION_WRITING    .equ 1
-
 ; memory regions
 MEMORY_START         .equ $6000
 MEMORY_END           .equ $D300
 MEMORY_PPU_START     .equ $1000
 MEMORY_PPU_END       .equ $2000
-
+; timeout value (about 10 seconds)
+TIMEOUT_VALUE        .equ 10
 ; first character (space) tile id
 SPACE                .equ $10
-
 ; subroutines in the RAM
-RAMCODE               .equ $0400
-waitblank             .equ $0400
-scroll_fix            .equ $0480
-printc                .equ $04A0
-printc_no_vblank      .equ $04A3
-print                 .equ $0500
-bleep                 .equ $0520
-beep                  .equ $0540
-error_sound           .equ $0560
-manual_mode_sound     .equ $0580
-done_sound            .equ $0600
-ask_disk              .equ $0640
-ascii                 .equ $0780
+RAMCODE              .equ $0400
+waitblank            .equ $0400
+scroll_fix           .equ $0480
+printc               .equ $04A0
+printc_no_vblank     .equ $04A3
+print                .equ $0500
+bleep                .equ $0520
+beep                 .equ $0540
+error_sound          .equ $0560
+manual_mode_sound    .equ $0580
+done_sound           .equ $0600
+ask_disk             .equ $0640
+ascii                .equ $0780
