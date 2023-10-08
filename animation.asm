@@ -16,6 +16,7 @@ led_on:
 .done:
   sta PPUDATA
   jsr scroll_fix
+  ; move to step 1
   lda #LOW(write_game_name)
   sta <ANIMATION_VECTOR
   lda #HIGH(write_game_name)
@@ -40,6 +41,7 @@ game_name_byte_3:
   sta PPUDATA
   jsr scroll_fix
 write_game_name_end:
+  ; move to step 2
   lda #LOW(write_disk_side)
   sta <ANIMATION_VECTOR
   lda #HIGH(write_disk_side)
@@ -62,6 +64,7 @@ side_number_byte:
   sta PPUDATA
   jsr scroll_fix
 write_disk_side_end:
+  ; move to step 3
   lda #LOW(led_off)
   sta <ANIMATION_VECTOR
   lda #HIGH(led_off)
@@ -79,6 +82,7 @@ led_off:
   lda #$08 ; color
   sta PPUDATA
   jsr scroll_fix
+  ; move to step 4
   lda #LOW(write_read_block_counters)
   sta <ANIMATION_VECTOR
   lda #HIGH(write_read_block_counters)
@@ -109,6 +113,7 @@ blocks_total_byte_2:
   sta PPUSCROLL
   sta PPUSCROLL
 write_read_block_counters_end:
+  ; move to step 5
   lda #LOW(write_written_block_counters)
   sta <ANIMATION_VECTOR
   lda #HIGH(write_written_block_counters)
@@ -139,20 +144,25 @@ blocks_total_byte_2b:
   sta PPUSCROLL
   sta PPUSCROLL
 write_written_block_counters_end:
+  ; move to step 6
   lda #LOW(animation_step_6)
   sta <ANIMATION_VECTOR
   lda #HIGH(animation_step_6)
   sta <ANIMATION_VECTOR + 1
   rts
 
+; step 6
 animation_step_6:
+  ; move to step 7
   lda #LOW(animation_step_7)
   sta <ANIMATION_VECTOR
   lda #HIGH(animation_step_7)
   sta <ANIMATION_VECTOR + 1
   rts
 
+; step 7
 animation_step_7:
+  ; move to step 0
   lda #LOW(led_on)
   sta <ANIMATION_VECTOR
   lda #HIGH(led_on)
@@ -285,7 +295,6 @@ animation_init:
   lda #HIGH(led_on)
   sta <ANIMATION_VECTOR + 1
   rts
-
 
 blank_screen_on:
   lda <PPU_MODE_NOW
