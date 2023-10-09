@@ -8,7 +8,7 @@
   .dw Start
   .dw IRQ_none
 
-  .org $D3C0  ; code starts at $D3C0
+  .org $D300  ; code starts at $D300
 Start:
   ; disable PPU
   lda #%00000000
@@ -51,6 +51,19 @@ load_palette:
   jsr led_off
 
 load_sprites:
+  ; load sprites
+  ldy #0
+.loop:
+  lda sprites, y
+  sta SPRITES, y
+  iny
+  cpy #(sprites_end - sprites)
+  bne .loop
+  lda #$FF
+.blank_loop:
+  sta SPRITES, y
+  iny
+  bne .blank_loop  
   lda #0 
   sta OAMADDR
   lda #HIGH(SPRITES)
@@ -225,6 +238,7 @@ NMI:
   .include "strings.asm"
   .include "animation.asm"
   .include "errors.asm"
+  .include "sprites.asm"
 
 palette: 
   .incbin "palette0.bin"

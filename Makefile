@@ -14,10 +14,6 @@ RAM_BINARY_CUT=ramcode_cut.bin
 RAM_SOURCE=ramcode.asm
 RAM_SOURCE_MORE=vars.asm fds_regs.asm macroses.asm  askdisk.asm sounds.asm ascii.asm
 
-SPRITES_BINARY=sprites.bin
-SPRITES_BINARY_CUT=sprites_cut.bin
-SPRITES_SOURCE=sprites.asm
-
 BG_IMAGE=gui.png
 BG2_IMAGE=blank.png
 ASCII_IMAGE=ascii.png
@@ -32,7 +28,7 @@ BG_ATTR_TABLE=bg_attr_table.bin
 BG2_NAMETABLE=bg2_nametable.bin
 BG2_ATTR_TABLE=bg2_attr_table.bin
 
-S_PRITES=sprites.png
+SPRITES=sprites.png
 S_PATTERN=spr_pattern_table.bin
 S_PALETTE0=spalette0.bin
 S_PALETTE1=spalette1.bin
@@ -62,13 +58,7 @@ $(RAM_BINARY): $(RAM_SOURCE) $(RAM_SOURCE_MORE)
 $(RAM_BINARY_CUT): $(RAM_BINARY)
 	dd if=$(RAM_BINARY) of=$(RAM_BINARY_CUT) bs=256 count=5
 
-$(SPRITES_BINARY): $(SPRITES_SOURCE)
-	$(NESASM) $(SPRITES_SOURCE) -o $(SPRITES_BINARY) -iWssr
-
-$(SPRITES_BINARY_CUT): $(SPRITES_BINARY)
-	dd if=$(SPRITES_BINARY) of=$(SPRITES_BINARY_CUT) bs=256 count=1
-
-$(OUTPUT_IMAGE): $(EXECUTABLE) $(RAM_BINARY_CUT) $(SPRITES_BINARY_CUT) diskinfo.json
+$(OUTPUT_IMAGE): $(EXECUTABLE) $(RAM_BINARY_CUT) diskinfo.json
 	$(FDSPACKER) pack --header diskinfo.json $(OUTPUT_IMAGE)
 
  $(BG_PATTERN) $(BG_NAMETABLE) $(BG_ATTR_TABLE) \
@@ -90,8 +80,8 @@ $(OUTPUT_IMAGE): $(EXECUTABLE) $(RAM_BINARY_CUT) $(SPRITES_BINARY_CUT) diskinfo.
 	--out-name-table-2 $(BG2_NAMETABLE) \
 	--out-attribute-table-2 $(BG2_ATTR_TABLE)
 
-$(S_PATTERN) $(S_PALETTE0) $(S_PALETTE1): $(S_PRITES)
-	$(TILER) -i0 $(S_PRITES) \
+$(S_PATTERN) $(S_PALETTE0) $(S_PALETTE1): $(SPRITES)
+	$(TILER) -i0 $(SPRITES) \
 	--bg-color \#000000 \
 	--mode sprites8x8 \
 	--enable-palettes 0,1 \

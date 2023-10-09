@@ -76,7 +76,7 @@ COLOR_WRITE_OFF      .equ $06
 COLOR_WRITE_ON       .equ $26
 ; memory regions
 MEMORY_START         .equ $6000
-MEMORY_END           .equ $D3C0
+MEMORY_END           .equ $D300
 MEMORY_PPU_START     .equ $1000
 MEMORY_PPU_END       .equ $2000
 ; timeout value (about 10 seconds)

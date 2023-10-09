@@ -17,7 +17,7 @@
       "actual_disk_side": "A",
       "disk_type_other": "YellowDisk",
       "disk_version": "$00",
-      "file_amount": 11,
+      "file_amount": 10,
       "files": [
         {
           "file_number": "0",
@@ -82,17 +82,9 @@
           "file_address": "$0F00",
           "file_kind": "Character",
           "data": "spr_pattern_table.bin"
-        },
+        },        
         {
           "file_number": "8",
-          "file_indicate_code": "0",
-          "file_name": "SPR_DATA",
-          "file_address": "$0200",
-          "file_kind": "Program",
-          "data": "sprites_cut.bin"
-        },
-        {
-          "file_number": "9",
           "file_indicate_code": "0",
           "file_name": "NOLICENS",
           "file_address": "$2000",
@@ -100,7 +92,7 @@
           "data": "no_license.prg"
         },
         {
-          "file_number": "10",
+          "file_number": "9",
           "file_indicate_code": "0",
           "file_name": "DUMMYDAT",
           "file_address": "$0200",
