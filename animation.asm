@@ -23,21 +23,18 @@ led_on:
 ; step 1
 write_game_name:
   lda <GAME_NAME_UPD
-  bne write_game_name_end
+  bne .end
   inc <GAME_NAME_UPD
   ; write game code
   PPU_to 10, 19
-game_name_byte_1:
-  lda #$00
+  lda <TEXT_GAME_NAME
   sta PPUDATA
-game_name_byte_2:
-  lda #$00
+  lda <TEXT_GAME_NAME + 1
   sta PPUDATA
-game_name_byte_3:
-  lda #$00
+  lda <TEXT_GAME_NAME + 2
   sta PPUDATA
   jsr scroll_fix
-write_game_name_end:
+.end:
   ; move to step 2
   lda #LOW(write_disk_side)
   sta <ANIMATION_VECTOR
@@ -48,19 +45,17 @@ write_game_name_end:
 ; step 2
 write_disk_side:
   lda <DISK_SIDE_UPD
-  bne write_disk_side_end
+  bne .end
   inc <DISK_SIDE_UPD
   ; write side
   PPU_to 21, 19
-disk_number_byte:
-  lda #$00
+  lda <TEXT_DISK_NUM
   sta PPUDATA
   PPU_to 23, 19
-side_number_byte:
-  lda #$00
+  lda <TEXT_DISK_SIDE
   sta PPUDATA
   jsr scroll_fix
-write_disk_side_end:
+.end:
   ; move to step 3
   lda #LOW(led_off)
   sta <ANIMATION_VECTOR
@@ -93,25 +88,21 @@ led_off:
 ; step 4
 write_read_block_counters:
   lda <READ_CNT_UPD
-  bne write_read_block_counters_end
+  bne .end
   inc <READ_CNT_UPD
   ; write block counters
   PPU_to 8, 21
-blocks_read_byte_1:
-  lda #$00
+  lda <TEXT_BLK_READ
   sta PPUDATA
-blocks_read_byte_2:
-  lda #$00
+  lda <TEXT_BLK_READ + 1
   sta PPUDATA
   PPU_to 11, 21
-blocks_total_byte_1:
-  lda #$00
+  lda <TEXT_BLK_TOTAL
   sta PPUDATA
-blocks_total_byte_2:
-  lda #$00
+  lda <TEXT_BLK_TOTAL + 1
   sta PPUDATA
   jsr scroll_fix
-write_read_block_counters_end:
+.end:
   ; move to step 5
   lda #LOW(write_written_block_counters)
   sta <ANIMATION_VECTOR
@@ -122,25 +113,21 @@ write_read_block_counters_end:
 ; step 5
 write_written_block_counters:
   lda <WRITTEN_CNT_UPD
-  bne write_written_block_counters_end
+  bne .end
   inc <WRITTEN_CNT_UPD
   ; write block counters
   PPU_to 19, 21
-blocks_written_byte_1:
-  lda #$00
+  lda <TEXT_BLK_WRITTEN
   sta PPUDATA
-blocks_written_byte_2:
-  lda #$00
+  lda <TEXT_BLK_WRITTEN + 1
   sta PPUDATA
   PPU_to 22, 21
-blocks_total_byte_1b:
-  lda #$00
+  lda <TEXT_BLK_TOTAL
   sta PPUDATA
-blocks_total_byte_2b:
-  lda #$00
+  lda <TEXT_BLK_TOTAL + 1
   sta PPUDATA
   jsr scroll_fix
-write_written_block_counters_end:
+.end:
   ; move to step 6
   lda #LOW(animation_step_6)
   sta <ANIMATION_VECTOR
@@ -174,11 +161,11 @@ precalculate_game_name:
   cmp #0
   bne .not_0
   lda #SPACE
-  sta game_name_byte_1 + 1
-  sta game_name_byte_2 + 1
-  sta game_name_byte_3 + 1
-  sta disk_number_byte + 1
-  sta side_number_byte + 1
+  sta <TEXT_GAME_NAME
+  sta <TEXT_GAME_NAME + 1
+  sta <TEXT_GAME_NAME + 2
+  sta <TEXT_DISK_NUM
+  sta <TEXT_DISK_SIDE
   jmp .done
 .not_0:
   cmp #1
@@ -190,32 +177,32 @@ precalculate_game_name:
   bmi .disk_number
   tax
   lda ascii, x  
-  sta game_name_byte_1 + 1
+  sta <TEXT_GAME_NAME
   lda HEADER_CACHE + (55 - $11)
   sec
   sbc #$20
   bmi .disk_number
   tax
   lda ascii, x  
-  sta game_name_byte_2 + 1
+  sta <TEXT_GAME_NAME + 1
   lda HEADER_CACHE + (55 - $12)
   sec
   sbc #$20
   bmi .disk_number
   tax
   lda ascii, x
-  sta game_name_byte_3 + 1
+  sta <TEXT_GAME_NAME + 2
   ; disk number
 .disk_number:
   lda HEADER_CACHE + (55 - $16)
   clc
   adc #(SPACE + $11)
-  sta disk_number_byte + 1
+  sta <TEXT_DISK_NUM
   ; side number
   lda HEADER_CACHE + (55 - $15)
   clc
   adc #(SPACE + $21)
-  sta side_number_byte + 1
+  sta <TEXT_DISK_SIDE
 .done:
   lda #0
   sta <GAME_NAME_UPD
@@ -236,42 +223,38 @@ precalculate_block_counters:
   jsr divide10
   clc
   adc #(SPACE + $10)
-  sta blocks_read_byte_2 + 1
+  sta <TEXT_BLK_READ + 1
   txa
   clc
   adc #(SPACE + $10)
-  sta blocks_read_byte_1 + 1
+  sta <TEXT_BLK_READ
   lda BLOCKS_WRITTEN
   jsr divide10
   clc
   adc #(SPACE + $10)
-  sta blocks_written_byte_2 + 1
+  sta <TEXT_BLK_WRITTEN + 1
   txa
   clc
   adc #(SPACE + $10)
-  sta blocks_written_byte_1 + 1
+  sta <TEXT_BLK_WRITTEN
   lda BLOCK_AMOUNT
   jsr divide10
   clc
   adc #(SPACE + $10)
-  sta blocks_total_byte_2 + 1
-  sta blocks_total_byte_2b + 1
+  sta <TEXT_BLK_TOTAL + 1
   txa
   clc
   adc #(SPACE + $10)
-  sta blocks_total_byte_1 + 1
-  sta blocks_total_byte_1b + 1
+  sta <TEXT_BLK_TOTAL
   rts
 .no_blocks:
   lda #SPACE
-  sta blocks_read_byte_1 + 1
-  sta blocks_read_byte_2 + 1
-  sta blocks_written_byte_1 + 1
-  sta blocks_written_byte_2 + 1
-  sta blocks_total_byte_1 + 1
-  sta blocks_total_byte_2 + 1
-  sta blocks_total_byte_1b + 1
-  sta blocks_total_byte_2b + 1
+  sta <TEXT_BLK_READ
+  sta <TEXT_BLK_READ + 1
+  sta <TEXT_BLK_WRITTEN
+  sta <TEXT_BLK_WRITTEN + 1
+  sta <TEXT_BLK_TOTAL
+  sta <TEXT_BLK_TOTAL + 1
   rts
 
 animation:
@@ -338,9 +321,11 @@ blank_screen_on:
   dec SPRITES + (4 * 1) + 0
   dec SPRITES + (4 * 2) + 0
   dec SPRITES + (4 * 3) + 0
+  dec SPRITES + (4 * 4) + 0
+  dec SPRITES + (4 * 5) + 0
   dex
   bne .multi_loop
-  lda SPRITES + (4 * 0) + 0
+  lda SPRITES + (4 * 2) + 0
   cmp #192
   bcc .sprites_on
   lda #%00001010
@@ -388,9 +373,11 @@ blank_screen_off:
   inc SPRITES + (4 * 1) + 0
   inc SPRITES + (4 * 2) + 0
   inc SPRITES + (4 * 3) + 0
+  inc SPRITES + (4 * 4) + 0
+  inc SPRITES + (4 * 5) + 0
   dex
   bne .multi_loop
-  lda SPRITES + (4 * 0) + 0
+  lda SPRITES + (4 * 2) + 0
   cmp #240
   bcc .sprites_off
   ; turn on sprites

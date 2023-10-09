@@ -37,6 +37,12 @@ DISK_SIDE_UPD    .rs 1  ; flag that disk side text updated on the screen
 READ_CNT_UPD     .rs 1  ; flag that read block amount updated on the screen
 WRITTEN_CNT_UPD  .rs 1  ; flag that written block amount updated on the screen
 LED_COLORS       .rs 3  ; cached LED colors
+TEXT_GAME_NAME   .rs 3  ; cached processed text
+TEXT_DISK_NUM    .rs 1  ; cached processed text
+TEXT_DISK_SIDE   .rs 1  ; cached processed text
+TEXT_BLK_READ    .rs 2  ; cached processed text
+TEXT_BLK_WRITTEN .rs 2  ; cached processed text
+TEXT_BLK_TOTAL   .rs 2  ; cached processed text
 HEADER_CACHE     .rs 56 ; cached disk header
   .rsset $0200
 SPRITES          .rs $100
