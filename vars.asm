@@ -43,6 +43,7 @@ TEXT_DISK_SIDE   .rs 1  ; cached processed text
 TEXT_BLK_READ    .rs 2  ; cached processed text
 TEXT_BLK_WRITTEN .rs 2  ; cached processed text
 TEXT_BLK_TOTAL   .rs 2  ; cached processed text
+SPRITES_Y_CACHE  .rs 6  ; virtual sprite Y position
 HEADER_CACHE     .rs 56 ; cached disk header
   .rsset $0200
 SPRITES          .rs $100

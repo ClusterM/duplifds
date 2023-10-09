@@ -312,26 +312,56 @@ blank_screen_on:
   beq .end
   ; disable rendering
   jsr waitblank
+  ; cache sprite coords
+  ldx #0
+  ldy #0
+.sprites_cache_loop:
+  lda sprites, y
+  sta <SPRITES_Y_CACHE, x
+  iny
+  iny
+  iny
+  iny
+  inx
+  cpx #((sprites_end - sprites) / 4)
+  bne .sprites_cache_loop
+
   ; scroll
 .scroll_loop:
-  ldx #8
+  ldx #4
 .multi_loop:
   inc <Y_OFFSET
-  dec SPRITES + (4 * 0) + 0
-  dec SPRITES + (4 * 1) + 0
-  dec SPRITES + (4 * 2) + 0
-  dec SPRITES + (4 * 3) + 0
-  dec SPRITES + (4 * 4) + 0
-  dec SPRITES + (4 * 5) + 0
+  ; move every sprite
+  txa ; save X - line
+  pha
+  ldx #0
+.move_sprite_loop:
+  txa ; save X - sprite #
+  pha
+  ; sprite # -> sprite Y offset
+  asl A
+  asl A
+  tax
+  ; need to move sprite?
+  lda SPRITES, x
+  cmp #$FF
+  beq .skip_sprite_move
+  ; moving
+  dec SPRITES, x  
+.skip_sprite_move:
+  pla ; restore X - sprite #
+  tax
+  dec <SPRITES_Y_CACHE, x
+  inx
+  cpx #((sprites_end - sprites) / 4)
+  bne .move_sprite_loop
+  pla ; restore X - line
+  tax
+  ; next line
   dex
   bne .multi_loop
-  lda SPRITES + (4 * 2) + 0
-  cmp #192
-  bcc .sprites_on
-  lda #%00001010
-  sta PPUMASK
-.sprites_on:
-  lda #0 
+  ; sync sprites
+  lda #0
   sta OAMADDR
   lda #HIGH(SPRITES)
   sta OAMDMA
@@ -348,7 +378,6 @@ blank_screen_on:
   sta PPUADDR
   lda #(MEMORY_PPU_START & $FF)
   sta PPUADDR
-  ; TODO: change screen color?
   lda <OPERATION
   cmp #OPERATION_WRITING
   bne .end
@@ -360,30 +389,46 @@ blank_screen_on:
 blank_screen_off:
   lda <PPU_MODE_NOW
   beq .end
-  ; enable rendering without sprites
+  ; enable rendering
   jsr waitblank
-  lda #%00001010
+  lda #%00011110
   sta PPUMASK  
   ; scroll
 .scroll_loop:
-  ldx #8
+  ldx #4
 .multi_loop:
   dec <Y_OFFSET
-  inc SPRITES + (4 * 0) + 0
-  inc SPRITES + (4 * 1) + 0
-  inc SPRITES + (4 * 2) + 0
-  inc SPRITES + (4 * 3) + 0
-  inc SPRITES + (4 * 4) + 0
-  inc SPRITES + (4 * 5) + 0
+  ; move every sprite
+  txa ; save X - line
+  pha
+  ldx #0
+.move_sprite_loop:
+  txa ; save X - sprite #
+  pha
+  tay ; copy to Y too
+  ; sprite # -> sprite Y offset
+  asl A
+  asl A
+  tax
+  ; need to move sprite?
+  lda SPRITES, x
+  cmp SPRITES_Y_CACHE, y ; can't access as zero page
+  bne .skip_sprite_move
+  ; moving
+  inc SPRITES, x  
+.skip_sprite_move:
+  pla ; restore X - sprite #
+  tax
+  inc <SPRITES_Y_CACHE, x
+  inx
+  cpx #((sprites_end - sprites) / 4)
+  bne .move_sprite_loop
+  pla ; restore X - line
+  tax
+  ; next line
   dex
   bne .multi_loop
-  lda SPRITES + (4 * 2) + 0
-  cmp #240
-  bcc .sprites_off
-  ; turn on sprites
-  lda #%00011110
-  sta PPUMASK
-.sprites_off:
+  ; sync sprites
   lda #0 
   sta OAMADDR
   lda #HIGH(SPRITES)

@@ -122,13 +122,13 @@ main:
   beq .read
   ; show warning about black screen
   printc_ptr str_screen_will_be_off_1
-  ldx #90
+  ldx #45
 .pause1:
   jsr waitblank
   dex
   bne .pause1
   printc_ptr str_screen_will_be_off_2
-  ldx #90
+  ldx #45
 .pause2:
   jsr waitblank
   dex
@@ -245,8 +245,6 @@ palette:
   .incbin "palette1.bin"
   .incbin "palette2.bin"
   .incbin "palette3.bin"
-  .incbin "spalette0.bin"
-  .incbin "spalette1.bin"
 
   .ifdef COMMIT
 commit:
