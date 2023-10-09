@@ -355,9 +355,9 @@ IRQ_disk_read:
   set_IRQ IRQ_disk_read_PPU
 .skip_inc_total_offset
   ; decrease bytes left counter
-  dec BLOCK_LEFT
+  dec <BLOCK_LEFT
   bne .end
-  dec BLOCK_LEFT + 1
+  dec <BLOCK_LEFT + 1
   bne .end
 .data_end:
   set_IRQ IRQ_disk_read_CRC
@@ -408,9 +408,9 @@ IRQ_disk_read_PPU:
   jsr parse_block
 .skip_parse:
   ; decrease bytes left counter
-  dec BLOCK_LEFT
+  dec <BLOCK_LEFT
   bne .end
-  dec BLOCK_LEFT + 1
+  dec <BLOCK_LEFT + 1
   bne .end
 .data_end:
   set_IRQ IRQ_disk_read_CRC
@@ -572,8 +572,23 @@ IRQ_disk_write:
   pla
   rti
 
+protection_bypass:
+  ; copy protection bypass, lol
+  lda <BLOCK_LEFT
+  bne .end
+  lda <BLOCK_LEFT + 1
+  and #%00001111
+  bne .end
+  ldx #(FDS_CONTROL_READ | FDS_CONTROL_MOTOR_ON | FDS_CONTROL_TRANSFER_ON | FDS_CONTROL_IRQ_ON)
+  ldy #(FDS_CONTROL_WRITE | FDS_CONTROL_MOTOR_ON | FDS_CONTROL_TRANSFER_ON | FDS_CONTROL_IRQ_ON)
+  stx FDS_CONTROL
+  sty FDS_CONTROL
+.end:
+  rts
+
 IRQ_disk_write2:
   pha
+  ;jsr protection_bypass
   ; discard input byte  
   bit FDS_DATA_READ
   ldy #0
@@ -597,9 +612,9 @@ IRQ_disk_write2:
   set_IRQ IRQ_disk_write2_PPU
 .total_offset_end:
   ; decrease bytes left counter
-  dec BLOCK_LEFT
+  dec <BLOCK_LEFT
   bne .end
-  dec BLOCK_LEFT + 1
+  dec <BLOCK_LEFT + 1
   bne .end
 .data_end:
   set_IRQ IRQ_disk_write3
@@ -609,6 +624,7 @@ IRQ_disk_write2:
 
 IRQ_disk_write2_PPU:
   pha
+  ;jsr protection_bypass
   ; discard input byte  
   bit FDS_DATA_READ
   lda PPUDATA
