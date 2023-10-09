@@ -42,8 +42,11 @@ transfer:
   sta <TIMEOUT
   sta <TIMEOUT + 1
   sta <TIMEOUT + 2
+  ; init animation
+  jsr animation_init_rewind
   ; wait for ready state
 .not_ready_yet:
+  jsr animation
   ; check timeout
   jsr check_timeout
   bne .not_timeout
@@ -137,7 +140,7 @@ read_block:
   ; calculate block size
   jsr calculate_block_size
   ; init animation
-  jsr animation_init
+  jsr animation_init_read
   ; dummy read?
   lda #1
   ldx <BLOCK_CURRENT
@@ -479,7 +482,7 @@ write_block:
   ; calculate block size
   jsr calculate_block_size
   ; init animation
-  jsr animation_init
+  jsr animation_init_write
   ; need to write zero (?)
   lda #0
   sta FDS_DATA_WRITE

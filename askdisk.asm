@@ -29,7 +29,7 @@ blink_eject_button:
   bit PPUSTATUS
   lda #$3F
   sta PPUADDR  
-  lda #$12
+  lda #$15
   sta PPUADDR
   lda <ANIMATION_STATE
   and #%00010000

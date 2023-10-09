@@ -43,9 +43,11 @@ load_palette:
   lda palette, x
   sta PPUDATA
   inx
-  cpx #20
+  cpx #16
   bne .loop
-  ; change color of the LED
+  ; reset animation
+  lda #0
+  sta <ANIMATION_STATE
   jsr led_off
 
 load_sprites:
@@ -230,6 +232,7 @@ palette:
   .incbin "palette2.bin"
   .incbin "palette3.bin"
   .incbin "spalette0.bin"
+  .incbin "spalette1.bin"
 
   .ifdef COMMIT
 commit:

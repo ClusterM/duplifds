@@ -36,6 +36,7 @@ GAME_NAME_UPD    .rs 1  ; flag that game name text updated on the screen
 DISK_SIDE_UPD    .rs 1  ; flag that disk side text updated on the screen
 READ_CNT_UPD     .rs 1  ; flag that read block amount updated on the screen
 WRITTEN_CNT_UPD  .rs 1  ; flag that written block amount updated on the screen
+LED_COLORS       .rs 3  ; cached LED colors
 HEADER_CACHE     .rs 56 ; cached disk header
   .rsset $0200
 SPRITES          .rs $100
@@ -66,6 +67,13 @@ STOP_TIMEOUT_WRITE   .equ 11
 ; operation codes
 OPERATION_READING    .equ 0
 OPERATION_WRITING    .equ 1
+; LED colors
+COLOR_REWIND_OFF     .equ $2D
+COLOR_REWIND_ON      .equ $30
+COLOR_READ_OFF       .equ $0A
+COLOR_READ_ON        .equ $2A
+COLOR_WRITE_OFF      .equ $06
+COLOR_WRITE_ON       .equ $26
 ; memory regions
 MEMORY_START         .equ $6000
 MEMORY_END           .equ $D3C0
@@ -74,7 +82,7 @@ MEMORY_PPU_END       .equ $2000
 ; timeout value (about 10 seconds)
 TIMEOUT_VALUE        .equ 10
 ; first character (space) tile id
-SPACE                .equ $10
+SPACE                .equ $00
 ; subroutines in the RAM
 RAMCODE              .equ $0300
 waitblank            .equ $0300

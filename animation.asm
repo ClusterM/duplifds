@@ -4,16 +4,13 @@ led_on:
   bit PPUSTATUS
   lda #$3F
   sta PPUADDR
-  lda #$13
+  lda #$11
   sta PPUADDR
-  lda <OPERATION
-  cmp #OPERATION_WRITING
-  bne .reading
-  lda #$16 ; write color
-  bne .done
-.reading:
-  lda #$19 ; read color
-.done:
+  lda <LED_COLORS
+  sta PPUDATA
+  lda <LED_COLORS + 1
+  sta PPUDATA
+  lda <LED_COLORS + 2
   sta PPUDATA
   jsr scroll_fix
   ; move to step 1
@@ -77,9 +74,13 @@ led_off:
   bit PPUSTATUS
   lda #$3F
   sta PPUADDR
-  lda #$13
+  lda #$11
   sta PPUADDR
-  lda #$08 ; color
+  lda #COLOR_REWIND_OFF
+  sta PPUDATA
+  lda #COLOR_READ_OFF
+  sta PPUDATA
+  lda #COLOR_WRITE_OFF
   sta PPUDATA
   jsr scroll_fix
   ; move to step 4
@@ -109,9 +110,7 @@ blocks_total_byte_1:
 blocks_total_byte_2:
   lda #$00
   sta PPUDATA
-  lda #0
-  sta PPUSCROLL
-  sta PPUSCROLL
+  jsr scroll_fix
 write_read_block_counters_end:
   ; move to step 5
   lda #LOW(write_written_block_counters)
@@ -140,9 +139,7 @@ blocks_total_byte_1b:
 blocks_total_byte_2b:
   lda #$00
   sta PPUDATA
-  lda #0
-  sta PPUSCROLL
-  sta PPUSCROLL
+  jsr scroll_fix
 write_written_block_counters_end:
   ; move to step 6
   lda #LOW(animation_step_6)
@@ -278,22 +275,53 @@ precalculate_block_counters:
   rts
 
 animation:
+  ; check for vblank, do not wait for it
   bit PPUSTATUS
   bpl .end
 .vblank:
-  ; check for vblank, do not wait for it
+  ; skip if PPU mode activated
   lda <PPU_MODE_NOW
   bne .end
+  ; just to scheduled animation
   jmp [ANIMATION_VECTOR]
 .end:
   rts
 
 animation_init:
-  ; we can edit animation_vectors because code in the RAM adapter's RAM
   lda #LOW(led_on)
   sta <ANIMATION_VECTOR
   lda #HIGH(led_on)
   sta <ANIMATION_VECTOR + 1
+  rts
+
+animation_init_rewind:
+  jsr animation_init
+  lda #COLOR_REWIND_ON
+  sta <LED_COLORS
+  lda #COLOR_READ_OFF
+  sta <LED_COLORS + 1
+  lda #COLOR_WRITE_OFF
+  sta <LED_COLORS + 2
+  rts
+
+animation_init_read:
+  jsr animation_init
+  lda #COLOR_REWIND_OFF
+  sta <LED_COLORS
+  lda #COLOR_READ_ON
+  sta <LED_COLORS + 1
+  lda #COLOR_WRITE_OFF
+  sta <LED_COLORS + 2
+  rts
+
+animation_init_write:
+  jsr animation_init
+  lda #COLOR_REWIND_OFF
+  sta <LED_COLORS
+  lda #COLOR_READ_OFF
+  sta <LED_COLORS + 1
+  lda #COLOR_WRITE_ON
+  sta <LED_COLORS + 2
   rts
 
 blank_screen_on:

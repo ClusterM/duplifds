@@ -35,6 +35,7 @@ BG2_ATTR_TABLE=bg2_attr_table.bin
 S_PRITES=sprites.png
 S_PATTERN=spr_pattern_table.bin
 S_PALETTE0=spalette0.bin
+S_PALETTE1=spalette1.bin
 
 INTERIM?=0
 COMMIT_FILE=commit.txt
@@ -52,7 +53,7 @@ $(EXECUTABLE): $(SOURCE) $(SOURCE_MORE) $(BG_PATTERN) \
 $(PALETTE0) $(PALETTE1) $(PALETTE2) $(PALETTE3) \
 $(BG_NAMETABLE) $(BG_NAMETABLE) $(BG_ATTR_TABLE) \
 $(BG2_NAMETABLE) $(BG2_NAMETABLE) $(BG2_ATTR_TABLE) \
-$(S_PATTERN) $(S_PALETTE0)
+$(S_PATTERN) $(S_PALETTE0) $(S_PALETTE0)
 	$(NESASM) $(SOURCE) -o $(EXECUTABLE) $(COMMIT_ARGS) --symbols=$(OUTPUT_IMAGE) -iWssr
 
 $(RAM_BINARY): $(RAM_SOURCE) $(RAM_SOURCE_MORE)
@@ -75,7 +76,6 @@ $(OUTPUT_IMAGE): $(EXECUTABLE) $(RAM_BINARY_CUT) $(SPRITES_BINARY_CUT) diskinfo.
  $(PALETTE0) $(PALETTE1) $(PALETTE2) $(PALETTE3): $(ASCII_IMAGE) $(BG_IMAGE) $(BG2_IMAGE)
 	$(TILER) -i0 $(ASCII_IMAGE) -i1 $(BG_IMAGE) -i2 $(BG2_IMAGE) \
 	--bg-color \#000000 --share-pattern-table \
-	--pattern-offset 16 \
 	--palette-0 \#c4c4c4,\#008088,\#005000 \
 	--palette-1 \#c4c4c4,\#008088,\#f0bc3c \
 	--palette-2 \#c4c4c4,\#008088,\#fc7460 \
@@ -90,13 +90,16 @@ $(OUTPUT_IMAGE): $(EXECUTABLE) $(RAM_BINARY_CUT) $(SPRITES_BINARY_CUT) diskinfo.
 	--out-name-table-2 $(BG2_NAMETABLE) \
 	--out-attribute-table-2 $(BG2_ATTR_TABLE)
 
-$(S_PATTERN) $(S_PALETTE0): $(S_PRITES)
+$(S_PATTERN) $(S_PALETTE0) $(S_PALETTE1): $(S_PRITES)
 	$(TILER) -i0 $(S_PRITES) \
 	--bg-color \#000000 \
 	--mode sprites8x8 \
-	--palette-0 \#a8f0bc,\#f0bc3c,\#787878 \
+	--enable-palettes 0,1 \
+	--palette-0 \#787878,\#0000a8,\#402c00 \
+	--palette-1 \#f0bc3c,\#000000,\#000000 \
 	--out-pattern-table $(S_PATTERN) \
-	--out-palette-0 $(S_PALETTE0)
+	--out-palette-0 $(S_PALETTE0) \
+	--out-palette-1 $(S_PALETTE1)
 
 $(COMMIT_FILE):
 	git rev-parse --short HEAD | tr -d '\n' > $(COMMIT_FILE)
