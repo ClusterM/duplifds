@@ -2,6 +2,8 @@ transfer:
   lda #0
   sta <STOP_REASON
   sta <BREAK_READ
+  ; delay before motor start
+  delay 1000
   ; disable rendering if need
   jsr blank_screen_on
   ; start address in memory
