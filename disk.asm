@@ -639,9 +639,9 @@ IRQ_disk_write2_PPU:
   inc <DISK_OFFSET + 1
 .total_offset_end:
  ; decrease bytes left counter
-  dec BLOCK_LEFT
+  dec <BLOCK_LEFT
   bne .end
-  dec BLOCK_LEFT + 1
+  dec <BLOCK_LEFT + 1
   bne .end
 .data_end:
   set_IRQ IRQ_disk_write3
@@ -682,9 +682,9 @@ IRQ_disk_write2_file_amount:
   inc <DISK_OFFSET
 .total_offset_end:
   ; decrease bytes left counter
-  dec BLOCK_LEFT
+  dec <BLOCK_LEFT
   bne .end
-  dec BLOCK_LEFT + 1
+  dec <BLOCK_LEFT + 1
   bne .end
 .data_end:
   set_IRQ IRQ_disk_write3
