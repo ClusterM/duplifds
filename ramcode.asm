@@ -1,21 +1,11 @@
-  .include "vars.asm"
-  .include "fds_regs.asm"
-  .include "macroses.asm"
-
-ram_code:
-  .include "askdisk.asm"
-  .include "sounds.asm"
-  .include "ascii.asm"
-
-  .org (waitblank - RAMCODE)
-waitblank_ram:
+waitblank:
   pha
   txa
   pha
   tya
   pha
-  jsr (waitblank + (read_controller - waitblank_ram))
-  jsr (waitblank + (parse_buttons - waitblank_ram))
+  jsr read_controller
+  jsr parse_buttons
   jsr scroll_fix
   bit PPUSTATUS
 .loop:
@@ -50,7 +40,7 @@ parse_buttons:
   sta RESET_FLAG
   lda #$53
   sta RESET_TYPE
-  jmp (waitblank + (.reset_end - waitblank_ram))
+  jmp .reset_end
 .normal_reset:
   lda #0
   sta RESET_FLAG
@@ -82,8 +72,7 @@ read_controller:
   sta <JOY_BOTH_HOLD
   rts
 
-  .org (scroll_fix - RAMCODE)
-scroll_fix_ram:
+scroll_fix:
   ; fix scrolling
   pha
   bit PPUSTATUS
@@ -103,11 +92,10 @@ scroll_fix_ram:
   pla
   rts
 
-  .org (printc - RAMCODE)
   ; write message to the center line
-printc_ram:
+printc:
   jsr waitblank
-printc_no_vblank_ram:
+printc_no_vblank:
   PPU_to 6, 17
   ldy #0
 .loop:
@@ -135,8 +123,7 @@ printc_no_vblank_ram:
   iny
   bne .loop_blank
 
-  .org (print - RAMCODE)
-print_ram:
+print:
   ; just write message
   ldy #0
 .loop:
@@ -152,12 +139,11 @@ print_ram:
 .end:
   rts
 
-  .org (wait_button_or_eject - RAMCODE)
-wait_button_or_eject_ram:
+wait_button_or_eject:
   ; wait until any button is pressed or disk is ejected
   jsr waitblank
   lda <JOY_BOTH_HOLD
-  bne wait_button_or_eject_ram
+  bne wait_button_or_eject
 .wait:
   jsr waitblank
   lda <JOY_BOTH_HOLD
@@ -168,12 +154,11 @@ wait_button_or_eject_ram:
 .end:
   rts
 
-  .org (wait_button_or_ins - RAMCODE)
-wait_button_or_insert_ram:
+wait_button_or_insert:
   ; wait until any button is pressed or disk is insertes
   jsr waitblank
   lda <JOY_BOTH_HOLD
-  bne wait_button_or_insert_ram
+  bne wait_button_or_insert
 .wait:
   jsr waitblank
   lda <JOY_BOTH_HOLD
@@ -184,9 +169,8 @@ wait_button_or_insert_ram:
 .end:
   rts
 
-  .org (ask_retry_cancel - RAMCODE)
-ask_retry_cancel_ram:
-  printc_ptr (ask_retry_cancel + (.str_ask_retry_cancel - ask_retry_cancel_ram))
+ask_retry_cancel:
+  printc_ptr (ask_retry_cancel + (.str_ask_retry_cancel - ask_retry_cancel))
 .wait_no_button
   jsr waitblank
   lda <JOY_BOTH_HOLD
@@ -209,8 +193,7 @@ ask_retry_cancel_ram:
 .str_ask_retry_cancel:
   .db "A-RETRY   B-CANCEL"
 
-  .org (divide10 - RAMCODE)
-divide10_ram:
+divide10:
   ; input: a - dividend 
   ; output: a - remainder, x = quotient
   ldx #0

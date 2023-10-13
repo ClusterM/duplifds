@@ -1,5 +1,4 @@
-  .org (ascii - RAMCODE)
-ascii_ram:
+ascii:
   ; characters: <space>!"#$%&'
   .db SPACE + $00, SPACE + $01, SPACE + $02, SPACE + $03, SPACE + $04, SPACE + $05, SPACE + $06, SPACE + $07
   ; characters: ()*+,-./

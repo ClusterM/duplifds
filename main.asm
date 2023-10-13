@@ -251,3 +251,10 @@ commit:
   .incbin COMMIT
   .db $FF
   .endif
+
+  ; code/data in the Famicom's RAM: $0300-$07FF
+  .org $0300
+  .include "ramcode.asm"
+  .include "askdisk.asm"
+  .include "sounds.asm"
+  .include "ascii.asm"

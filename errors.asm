@@ -21,7 +21,7 @@ print_error:
   cmp #STOP_NO_DISK
   bne .not_no_disk
   printc_ptr str_err_no_disk
-  jsr wait_button_or_ins
+  jsr wait_button_or_insert
   jsr ask_retry_cancel
   rts
 .not_no_disk:

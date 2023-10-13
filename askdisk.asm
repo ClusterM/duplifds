@@ -1,29 +1,28 @@
-  .org (ask_disk - RAMCODE)
   ; wait until a disk is inserted
-ask_disk_ram:
+ask_disk:
   jsr bleep
   ; skip .wait_eject if the disk already ejected
   lda FDS_DRIVE_STATUS
   and #FDS_DRIVE_STATUS_DISK_NOT_INSERTED
   bne .to_wait_insert  
 .wait_eject:
-  jsr (ask_disk + (eject_disk_animation - ask_disk_ram))
+  jsr eject_disk_animation
   ; check for select press
   lda <MANUAL_MODE
   beq .no_manual
   ; enable manual mode
-  jmp (ask_disk + (.to_wait_insert - ask_disk_ram))
+  jmp .to_wait_insert
 .no_manual:
   lda FDS_DRIVE_STATUS
   and #FDS_DRIVE_STATUS_DISK_NOT_INSERTED
   beq .wait_eject
-  jsr (ask_disk + (eject_disk_animation - ask_disk_ram))  
+  jsr eject_disk_animation
 .to_wait_insert:
   jsr waitblank
   lda #0
   sta <ANIMATION_STATE
-  jsr (ask_disk + (blink_eject_button - ask_disk_ram))
-  jmp (ask_disk + (wait_insert - ask_disk_ram))
+  jsr blink_eject_button
+  jmp wait_insert
 
 blink_eject_button:
   bit PPUSTATUS
@@ -45,9 +44,9 @@ blink_eject_button:
 eject_disk_animation:
   inc <ANIMATION_STATE
   jsr waitblank
-  jsr (ask_disk + (blink_eject_button - ask_disk_ram))
+  jsr blink_eject_button
 .print_text:
-  printc_ptr_no_vblank (ask_disk + (str_eject_disk - ask_disk_ram))
+  printc_ptr_no_vblank str_eject_disk
   rts
 
 wait_insert:
@@ -55,7 +54,7 @@ wait_insert:
   ; lets reuse this variable
   sta <TIMER_COUNTER
 .wait_insert_loop:
-  jsr (ask_disk + (insert_disk_animation - ask_disk_ram))
+  jsr insert_disk_animation
   lda FDS_DRIVE_STATUS
   and #FDS_DRIVE_STATUS_DISK_NOT_INSERTED
   bne wait_insert
@@ -64,7 +63,7 @@ wait_insert:
   cmp #10
   beq .check_manual
   inc <TIMER_COUNTER
-  jmp (ask_disk + (.wait_insert_loop - ask_disk_ram))
+  jmp .wait_insert_loop
 .check_manual:
   ; check for manual mode
   lda <MANUAL_MODE
@@ -78,13 +77,13 @@ wait_insert:
   jsr waitblank
   lda #0
   sta ANIMATION_STATE
-  jsr (ask_disk + (blink_disk - ask_disk_ram))
+  jsr blink_disk
   rts
 
 insert_disk_animation:
   inc <ANIMATION_STATE
   jsr waitblank
-  jsr (ask_disk + (blink_disk - ask_disk_ram))
+  jsr blink_disk
   ; print text
   lda <MANUAL_MODE
   beq .no_manual
@@ -94,13 +93,13 @@ insert_disk_animation:
 .no_manual:
   lda <OPERATION
   bne .target_disk
-  printc_ptr_no_vblank (ask_disk + (str_insert_source_disk - ask_disk_ram))
+  printc_ptr_no_vblank str_insert_source_disk
   rts
 .target_disk:
-  printc_ptr_no_vblank (ask_disk + (str_insert_target_disk - ask_disk_ram))
+  printc_ptr_no_vblank str_insert_target_disk
   rts
 .ask_press_start:
-  printc_ptr_no_vblank (ask_disk + (str_and_press_start - ask_disk_ram))
+  printc_ptr_no_vblank str_and_press_start
   rts
 
 blink_disk:

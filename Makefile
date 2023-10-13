@@ -6,13 +6,10 @@ FAMICOM_DUMPER?=famicom-dumper
 
 OUTPUT_IMAGE?=duplifds.fds
 EXECUTABLE=duplifds.prg
-SOURCE=main.asm
-SOURCE_MORE=vars.asm fds_regs.asm macroses.asm disk.asm strings.asm animation.asm errors.asm
-
-RAM_BINARY=ramcode.bin
+MAIN_BINARY_CUT=main_cut.bin
 RAM_BINARY_CUT=ramcode_cut.bin
-RAM_SOURCE=ramcode.asm
-RAM_SOURCE_MORE=vars.asm fds_regs.asm macroses.asm  askdisk.asm sounds.asm ascii.asm
+SOURCE=main.asm
+SOURCE_MORE=vars.asm fds_regs.asm macroses.asm disk.asm strings.asm animation.asm errors.asm ramcode.asm askdisk.asm sounds.asm ascii.asm
 
 BG_IMAGE=gui.png
 BG2_IMAGE=blank.png
@@ -50,13 +47,13 @@ $(BG2_NAMETABLE) $(BG2_NAMETABLE) $(BG2_ATTR_TABLE) \
 $(S_PATTERN)
 	$(NESASM) $(SOURCE) -o $(EXECUTABLE) $(COMMIT_ARGS) --symbols=$(OUTPUT_IMAGE) -iWssr
 
-$(RAM_BINARY): $(RAM_SOURCE) $(RAM_SOURCE_MORE)
-	$(NESASM) $(RAM_SOURCE) -o $(RAM_BINARY) -iWssr
+$(MAIN_BINARY_CUT): $(EXECUTABLE)
+	dd if=$(EXECUTABLE) of=$(MAIN_BINARY_CUT) bs=256 skip=16
 
-$(RAM_BINARY_CUT): $(RAM_BINARY)
-	dd if=$(RAM_BINARY) of=$(RAM_BINARY_CUT) bs=256 count=5
+$(RAM_BINARY_CUT): $(EXECUTABLE)
+	dd if=$(EXECUTABLE) of=$(RAM_BINARY_CUT) bs=256 skip=3 count=5
 
-$(OUTPUT_IMAGE): $(EXECUTABLE) $(RAM_BINARY_CUT) diskinfo.json
+$(OUTPUT_IMAGE): $(MAIN_BINARY_CUT) $(RAM_BINARY_CUT) diskinfo.json
 	$(FDSPACKER) pack --header diskinfo.json $(OUTPUT_IMAGE)
 
  $(BG_PATTERN) $(BG_NAMETABLE) $(BG_ATTR_TABLE) \

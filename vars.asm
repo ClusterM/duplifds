@@ -90,21 +90,3 @@ MEMORY_PPU_END       .equ $2000
 TIMEOUT_VALUE        .equ 10
 ; first character (space) tile id
 SPACE                .equ $00
-; subroutines in the RAM
-RAMCODE              .equ $0300
-waitblank            .equ $0300
-scroll_fix           .equ $0380
-printc               .equ $03A0
-printc_no_vblank     .equ $03A3
-print                .equ $0400
-bleep                .equ $0420
-beep                 .equ $0440
-error_sound          .equ $0460
-manual_mode_sound    .equ $0480
-done_sound           .equ $0500
-ask_disk             .equ $0520
-wait_button_or_eject .equ $0650
-wait_button_or_ins   .equ $0670
-ask_retry_cancel     .equ $0690
-divide10             .equ $06D0
-ascii                .equ $0780

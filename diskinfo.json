@@ -23,9 +23,9 @@
           "file_number": "0",
           "file_indicate_code": "0",
           "file_name": "PRG",
-          "file_address": "$C000",
+          "file_address": "$D000",
           "file_kind": "Program",
-          "data": "duplifds.prg"
+          "data": "main_cut.bin"
         },
         {
           "file_number": "1",
