@@ -768,6 +768,7 @@ calculate_block_size:
   lda <NEXT_FILE_SIZE + 1
   adc #0
   sta <BLOCK_LEFT + 1
+  inc <BLOCK_LEFT
   inc <BLOCK_LEFT + 1
   lda #4
   sta <BLOCK_TYPE_TEST
