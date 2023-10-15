@@ -139,8 +139,6 @@ read_block:
 .not_first_block:
   delay 9
 .end_delay
-  ; calculate block size
-  jsr calculate_block_size
   ; init animation
   jsr animation_init_read
   ; dummy read?
@@ -151,7 +149,12 @@ read_block:
   lda #0
 .dummy_reading:  
   sta <DUMMY_READ
+  ; calculate block size
+  jsr calculate_block_size
+  ; do we need to enable raw CRC mode?
+  jsr check_raw_crc
   ; we don't need memory check for dummy reading
+  lda <DUMMY_READ
   bne .memory_ok
   ; check free memory
   lda <PPU_MODE_NOW
@@ -415,6 +418,13 @@ IRQ_disk_read_PPU:
   dec <BLOCK_LEFT + 1
   bne .end
 .data_end:
+  lda <RAW_CRC
+  bne .not_raw_crc
+  ; fake successful CRC check
+  lda #(FDS_CONTROL_READ | FDS_CONTROL_MOTOR_ON)
+  sta FDS_CONTROL
+  inc <CRC_RESULT
+.not_raw_crc:
   set_IRQ IRQ_disk_read_CRC
 .end:
   pla
@@ -481,11 +491,13 @@ write_block:
 .not_first_block:
   delay 18
 .end_delay:
-  ; calculate block size
-  jsr calculate_block_size
   ; init animation
   jsr animation_init_write
-  ; need to write zero (?)
+  ; calculate block size
+  jsr calculate_block_size
+  ; do we need to enable raw CRC mode?
+  jsr check_raw_crc
+  ; need to write zero
   lda #0
   sta FDS_DATA_WRITE
   ; reset variables
@@ -576,6 +588,8 @@ IRQ_disk_write:
 
 protection_bypass:
   ; copy protection bypass, lol
+  lda <RAW_CRC
+  beq .end
   lda <BLOCK_LEFT
   bne .end
   lda <BLOCK_LEFT + 1
@@ -589,8 +603,8 @@ protection_bypass:
   rts
 
 IRQ_disk_write2:
-  pha
-  ;jsr protection_bypass
+  pha  
+  jsr protection_bypass
   ; discard input byte  
   bit FDS_DATA_READ
   ldy #0
@@ -626,7 +640,7 @@ IRQ_disk_write2:
 
 IRQ_disk_write2_PPU:
   pha
-  ;jsr protection_bypass
+  jsr protection_bypass
   ; discard input byte  
   bit FDS_DATA_READ
   lda PPUDATA
@@ -818,4 +832,38 @@ check_timeout:
   lda <TIMEOUT + 2
   cmp #TIMEOUT_VALUE
 .end:
+  rts
+
+check_raw_crc:
+  ; check if we need to enable raw CRC
+  ; for this block
+  lda #0
+  sta <RAW_CRC
+  lda <BLOCK_TYPE_ACT
+  cmp #4
+  beq .block4
+  rts
+.block4:
+  ; writing?
+  lda <OPERATION
+  bne .yes
+  ; reading
+  lda <DUMMY_READ
+  beq .yes
+  rts
+.yes:
+  ; yes, need to enable raw CRC
+  inc <RAW_CRC
+  ; increase block length by 2 (CRC size)
+  dec <BLOCK_LEFT
+  dec <BLOCK_LEFT + 1
+  clc
+  lda <BLOCK_LEFT
+  adc #2
+  sta <BLOCK_LEFT
+  lda <BLOCK_LEFT + 1
+  adc #0
+  sta <BLOCK_LEFT + 1
+  inc <BLOCK_LEFT
+  inc <BLOCK_LEFT + 1
   rts
