@@ -590,15 +590,21 @@ protection_bypass:
   ; copy protection bypass, lol
   lda <RAW_CRC
   beq .end
-  lda <BLOCK_LEFT
-  bne .end
-  lda <BLOCK_LEFT + 1
+  lda <NEED_RESET
+  beq .not_reset
+  lda <LAST_BYTE
   and #%00001111
   bne .end
   ldx #(FDS_CONTROL_READ | FDS_CONTROL_MOTOR_ON | FDS_CONTROL_TRANSFER_ON | FDS_CONTROL_IRQ_ON)
   ldy #(FDS_CONTROL_WRITE | FDS_CONTROL_MOTOR_ON | FDS_CONTROL_TRANSFER_ON | FDS_CONTROL_IRQ_ON)
   stx FDS_CONTROL
   sty FDS_CONTROL
+  sta <NEED_RESET
+  rts
+.not_reset:
+  inc <RAW_CRC_COUNTER
+  bne .end
+  inc <NEED_RESET
 .end:
   rts
 
@@ -610,6 +616,7 @@ IRQ_disk_write2:
   ldy #0
   lda [DISK_OFFSET], y
   sta FDS_DATA_WRITE
+  sta <LAST_BYTE
   ldx <BLOCK_TYPE_ACT
   cpx #4
   beq .skip_parse
@@ -645,6 +652,7 @@ IRQ_disk_write2_PPU:
   bit FDS_DATA_READ
   lda PPUDATA
   sta FDS_DATA_WRITE
+  sta <LAST_BYTE
   ldx <BLOCK_TYPE_ACT
   cpx #4
   beq .skip_parse
@@ -866,4 +874,7 @@ check_raw_crc:
   sta <BLOCK_LEFT + 1
   inc <BLOCK_LEFT
   inc <BLOCK_LEFT + 1
+  lda #0
+  sta <RAW_CRC_COUNTER
+  sta <NEED_RESET
   rts
