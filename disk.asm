@@ -365,6 +365,15 @@ IRQ_disk_read:
   dec <BLOCK_LEFT + 1
   bne .end
 .data_end:
+  lda <RAW_CRC
+  bne .not_raw_crc
+  ; fake successful CRC check
+  lda #(FDS_CONTROL_READ | FDS_CONTROL_MOTOR_ON)
+  sta FDS_CONTROL
+  inc <CRC_RESULT
+  pla
+  rti
+.not_raw_crc:
   set_IRQ IRQ_disk_read_CRC
 .end:
   pla
@@ -424,6 +433,8 @@ IRQ_disk_read_PPU:
   lda #(FDS_CONTROL_READ | FDS_CONTROL_MOTOR_ON)
   sta FDS_CONTROL
   inc <CRC_RESULT
+  pla
+  rti
 .not_raw_crc:
   set_IRQ IRQ_disk_read_CRC
 .end:
