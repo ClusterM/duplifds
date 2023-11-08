@@ -859,6 +859,7 @@ check_raw_crc:
   ; for this block
   lda #0
   sta <RAW_CRC
+  rts ; disable
   lda <BLOCK_TYPE_ACT
   cmp #4
   beq .block4
