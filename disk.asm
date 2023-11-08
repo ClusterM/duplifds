@@ -11,25 +11,25 @@ transfer:
   sta <DISK_OFFSET
   lda #((MEMORY_START >> 8) & $FF)
   sta <DISK_OFFSET + 1
-  ; reset
-  lda #(FDS_CONTROL_READ | FDS_CONTROL_MOTOR_OFF)
-  sta FDS_CONTROL
-  ; start motor
-  lda #(FDS_CONTROL_READ | FDS_CONTROL_MOTOR_ON)
-  sta FDS_CONTROL
-  ; check power
-  lda #$FF
-  sta FDS_EXT_WRITE
-  delay 200
-  lda FDS_EXT_READ
-  and #$80
-  bne .battery_ok
-  ; no power
-  lda #STOP_NO_POWER
-  sta <STOP_REASON
-  jmp .end
-.battery_ok:
-  ; power ok, rewinding
+;  ; reset
+;  lda #(FDS_CONTROL_READ | FDS_CONTROL_MOTOR_OFF)
+;  sta FDS_CONTROL
+;  ; start motor
+;  lda #(FDS_CONTROL_READ | FDS_CONTROL_MOTOR_ON)
+;  sta FDS_CONTROL
+;  ; check power
+;  lda #$FF
+;  sta FDS_EXT_WRITE
+;  delay 200
+;  lda FDS_EXT_READ
+;  and #$80
+;  bne .battery_ok
+;  ; no power
+;  lda #STOP_NO_POWER
+;  sta <STOP_REASON
+;  jmp .end
+;.battery_ok:
+;  ; power ok, rewinding
   ; reset
   lda #(FDS_CONTROL_READ | FDS_CONTROL_MOTOR_OFF)
   sta FDS_CONTROL
